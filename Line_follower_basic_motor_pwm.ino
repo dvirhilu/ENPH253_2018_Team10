@@ -16,6 +16,10 @@ double pid;
 int default_speed = 700;
 int integral = 0;
 int derivative = 0;
+boolean p_disp = false;
+boolean i_disp = false;
+boolean d_disp = true;
+boolean leftError = true;
 
 void setup(){
   #include <phys253setup.txt>
@@ -39,31 +43,58 @@ void loop() {
     double valuePID = knob(7);
 
     if(startbutton()){
-      if(choosePID < 330){
-        k_p = valuePID/8;
+      if(d_disp){
+        d_disp = false;
+        p_disp = true;
       }
-      if(choosePID < 660 && choosePID >= 330){
-        k_d = valuePID/10000;
+      else if(p_disp){
+        p_disp = false;
+        i_disp = true;
       }
-      if(choosePID > 660){
-        k_i = valuePID/10000;
-      }
-      while(!startbutton()){
-        LCD.setCursor(0,0);
-        LCD.print(String("kp = ") + k_p + "|| kd = " + k_d + "|| ki = " + k_i);
+      else{
+        i_disp = false;
+        d_disp = true;
       }
     }
     
     LCD.clear(); LCD.home();
-   
+
+    if(p_disp){
+      k_p = valuePID/8;
+      LCD.setCursor(0,1);
+      LCD.print("K_p:" + k_p);
+    }
+    else if(i_disp){
+      k_i = valuePID/200;
+      LCD.setCursor(0,1);
+      LCD.print("K_i:" + k_i);
+    }
+    else{
+      k_d = valuePID/200;
+      LCD.setCursor(0,1);
+      LCD.print("K_d:" + k_d);
+    }
 
     int sensorLeft = analogRead(3);
     int sensorRight = analogRead(2);
-   // LCD.setCursor(0,1); LCD.print(sensorLeft + "||" + sensorRight);
     LCD.setCursor(0,0); 
 
     current_time = micros();
     error = (sensorRight - rightDark) + (leftDark - sensorLeft);
+    if ((sensorRight-rightDark)>5 && (sensorLeft-leftDark)<5){
+      leftError = false;
+    }
+    if ((sensorRight-rightDark)<5 && (sensorLeft-leftDark)>5){
+      leftError = true;
+    }
+    if ((sensorRight-rightDark)>5 && (sensorLeft-leftDark)>5){
+      if(leftError){
+        error -=5;
+      }
+      else{
+        error +=5;
+      }
+    }
     integral = prev_error + error*(current_time - prev_time);
     derivative = (error - prev_error)/(current_time - prev_time);
 
@@ -71,7 +102,7 @@ void loop() {
 
     if( pid < 0 ){
       motor.speed(motorLeft,default_speed);
-      motor.speed(motorRight,default_speed - pid);
+      motor.speed(motorRight,default_speed + pid);
       LCD.print("------>>");
     }
     else{
