@@ -5,9 +5,9 @@ int leftDark = 15;
 int rightDark = 15;
 int motorLeft = 3;
 int motorRight = 2;
-int k_p = 0;
-int k_i = 0;
-int k_d = 0;
+double k_p = 0;
+double k_i = 0;
+double k_d = 0;
 int current_time = 0;
 int prev_time = 0;
 double error = 0;
@@ -30,14 +30,36 @@ void loop() {
   delay(100);
   }
 
+  
+
   prev_time = micros();
   while(!(stopbutton())){
-    LCD.clear(); LCD.home();
 
+    double choosePID = knob(6);
+    double valuePID = knob(7);
+
+    if(startbutton()){
+      if(choosePID < 330){
+        k_p = valuePID/8;
+      }
+      if(choosePID < 660 && choosePID >= 330){
+        k_d = valuePID/10000;
+      }
+      if(choosePID > 660){
+        k_i = valuePID/10000;
+      }
+      while(!startbutton()){
+        LCD.setCursor(0,0);
+        LCD.print(String("kp = ") + k_p + "|| kd = " + k_d + "|| ki = " + k_i);
+      }
+    }
+    
+    LCD.clear(); LCD.home();
+   
 
     int sensorLeft = analogRead(3);
     int sensorRight = analogRead(2);
-    LCD.setCursor(0,1); LCD.print(sensorLeft + "||" + sensorRight);
+   // LCD.setCursor(0,1); LCD.print(sensorLeft + "||" + sensorRight);
     LCD.setCursor(0,0); 
 
     current_time = micros();
