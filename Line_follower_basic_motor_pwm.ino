@@ -1,14 +1,14 @@
 #include <phys253.h>
 #include <LiquidCrystal.h>
 
-int leftDark = 15;
-int rightDark = 15;
+int leftDark = 20;
+int rightDark = 20;
 int motorLeft = 2;
 int motorRight = 3;
 
 
-int current_time = 0;
-int prev_time = 0;
+double current_time = 0;
+double prev_time = 0;
 
 double error = 0;
 double prev_error = 0;  
@@ -17,7 +17,7 @@ double pid;
 
 int default_speed = 800;
 
-int gain = 0;
+int gain = 10;
 int derivative = 0;
 int k_p = 0;
 int k_d = 0;
@@ -60,7 +60,8 @@ void loop() {
       delay(100);
   }
   delay(500);
-  
+
+  /*
   while(!(startbutton())) {
 
      double valuePID = knob(7);
@@ -82,9 +83,10 @@ void loop() {
       delay(100);
   }
   delay(500);
+*/
 
   while(!(startbutton())) {
-
+    
      double valuePID = knob(7);
       default_speed = valuePID;
       LCD.setCursor(0,1);
@@ -94,7 +96,7 @@ void loop() {
   }
   delay(500);
 
-  while(!(startbutton())) {
+  /*while(!(startbutton())) {
 
      double valuePID = knob(7);
       gain = valuePID/6;
@@ -104,7 +106,7 @@ void loop() {
       delay(100);
   }
     delay(500);
-
+*/
     
   
 
@@ -112,12 +114,14 @@ void loop() {
     while(!(stopbutton()) && !(startbutton())){
       int sensorLeft = analogRead(2);
       int sensorRight = analogRead(3);
+      current_time = micros();
       LCD.clear();
       LCD.setCursor(0,0); 
-      LCD.print((int)sensorLeft + String(" ") + (int)sensorRight + String(" ") + error);
+      LCD.print((int)sensorLeft + String(" ") + (int)sensorRight + String(" ") + pid);
+      
       LCD.setCursor(0,1);
 
-      current_time = micros();
+      
       //error = (sensorRight - rightDark) + (leftDark - sensorLeft);
       if (sensorRight<rightDark && !(sensorLeft<leftDark)){
         leftError = false;
@@ -138,10 +142,12 @@ void loop() {
       else{
         error = 0;
       }
-      derivative = (error - prev_error)/(current_time - prev_time);
+      derivative = 100000*(error - prev_error)/(current_time - prev_time);
 
       pid = gain * (k_p*error + k_d*derivative);
 
+      prev_error = error;
+      prev_time = current_time;
     
       if( pid < 0 ){
         motor.speed(motorLeft,default_speed);
@@ -154,10 +160,6 @@ void loop() {
         motor.speed(motorRight,default_speed);
         LCD.print((default_speed-pid) + String(" ") + (default_speed));
       }
-      
-
-      prev_error = error;
-      prev_time = current_time;
       delay(50);
 
     
