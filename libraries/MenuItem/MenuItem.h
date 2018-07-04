@@ -10,13 +10,13 @@
 class MenuItem
 {
   public:
-    MenuItem(String item, unsigned int* address );
-    String getName();
+    MenuItem(const char* item, unsigned int* address );
+    const char* getName();
     int getValue();
     void setValue( int value );
-
+	int getEepNum();
   private:
-    String itemName;
+    const char* itemName;
     unsigned int* EEPROMAddress;
 };
 
