@@ -2,12 +2,12 @@
 #include "MenuItem.h"
 #include <avr/EEPROM.h>
 
-MenuItem::MenuItem( String item, unsigned int* address ) {
+MenuItem::MenuItem( const char* item, unsigned int* address ) {
   itemName = item;
   EEPROMAddress = address;
 }
 
-String MenuItem::getName() {
+const char* MenuItem::getName() {
   return itemName;
 }
 
@@ -16,4 +16,8 @@ int MenuItem::getValue() {
 }
 void MenuItem::setValue( int value ) {
   eeprom_write_word(EEPROMAddress, value);
+}
+
+int MenuItem::getEepNum(){
+	return EEPROMAddress;
 }
