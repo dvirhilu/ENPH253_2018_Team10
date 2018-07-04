@@ -1,172 +1,142 @@
 #include <phys253.h>
 #include <LiquidCrystal.h>
+#include<MenuItem.h>
+#include<avr/EEPROM.h>
 
-int leftDark = 20;
-int rightDark = 20;
+//PID values
+
+MenuItem kp = MenuItem("k_p", (unsigned int*)1);
+MenuItem kd = MenuItem("k_d", (unsigned int*)2);
+MenuItem gainz = MenuItem("gainzz", (unsigned int*)3);
+MenuItem lDark = MenuItem("leftDark", (unsigned int*)4);
+MenuItem rDark = MenuItem("rightDark", (unsigned int*)5);
+MenuItem defaultSpeed = MenuItem("speeeeed", (unsigned int*)6);
+MenuItem menu[] = {kp, kd, gainz, lDark, rDark, defaultSpeed};
+
+int leftDark;
+int rightDark;
+int default_speed;
+int gain;
+int k_p;
+int k_d;
+
 int motorLeft = 2;
 int motorRight = 3;
-
 
 double current_time = 0;
 double prev_time = 0;
 
 double error = 0;
-double prev_error = 0;  
+double prev_error = 0;
+int derivative = 0;
 
 double pid;
-
-int default_speed = 800;
-
-int gain = 10;
-int derivative = 0;
-int k_p = 0;
-int k_d = 0;
-
-boolean p_disp = false;
-boolean gain_disp = false;
-boolean d_disp = true;
 boolean leftError = true;
 
-void setup(){
-  #include <phys253setup.txt>
+void setup() {
+#include <phys253setup.txt>
+  Serial.begin(9600);
 }
 
 
 void loop() {
 
-  while(!(startbutton())){
+  while (!(startbutton())) {
     LCD.clear(); LCD.home();
     LCD.print("Press Start");
     delay(100);
+  }
+  delay(500);
+
+  while (!(startbutton())) {
+    menuToggle();
+  }
+
+  k_p = menu[0].getValue();
+  k_d = menu[1].getValue();
+  gain = menu[2].getValue();
+  leftDark = menu[3].getValue();
+  rightDark = menu[4].getValue();
+  default_speed = menu[5].getValue();
+
+  prev_time = micros();
+  while (!(stopbutton()) && !(startbutton())) {
+    int sensorLeft = analogRead(2);
+    int sensorRight = analogRead(3);
+    current_time = micros();
+    LCD.clear();
+    LCD.setCursor(0, 0);
+    LCD.print((int)sensorLeft + String(" ") + (int)sensorRight + String(" ") + pid);
+
+    LCD.setCursor(0, 1);
+
+
+    //error = (sensorRight - rightDark) + (leftDark - sensorLeft);
+    if (sensorRight < rightDark && !(sensorLeft < leftDark)) {
+      leftError = false;
+      error = 1;
     }
-  delay(500);
-  while(!(startbutton())) {
-
-     double valuePID = knob(7);
-      k_p = valuePID/6;
-      LCD.setCursor(0,1);
-      LCD.clear();
-      LCD.print(String("K_p:") + k_p);
-      delay(100);
-  }
-  delay(500);
-  while(!(startbutton())) {
-
-     double valuePID = knob(7);
-      k_d = valuePID/6;
-      LCD.setCursor(0,1);
-      LCD.clear();
-      LCD.print(String("K_d:") + k_d);
-      delay(100);
-  }
-  delay(500);
-
-  /*
-  while(!(startbutton())) {
-
-     double valuePID = knob(7);
-      leftDark = valuePID/32;
-      LCD.setCursor(0,1);
-      LCD.clear();
-      LCD.print(String("leftDark: ") + leftDark);
-      delay(100);
-  }
-  delay(500);
-
-  while(!(startbutton())) {
-
-     double valuePID = knob(7);
-      rightDark = valuePID/32;
-      LCD.setCursor(0,1);
-      LCD.clear();
-      LCD.print(String("rightDark: ") + rightDark);
-      delay(100);
-  }
-  delay(500);
-*/
-
-  while(!(startbutton())) {
-    
-     double valuePID = knob(7);
-      default_speed = valuePID;
-      LCD.setCursor(0,1);
-      LCD.clear();
-      LCD.print(String("speeeeed: ") + default_speed);
-      delay(100);
-  }
-  delay(500);
-
-  /*while(!(startbutton())) {
-
-     double valuePID = knob(7);
-      gain = valuePID/6;
-      LCD.setCursor(0,1);
-      LCD.clear();
-      LCD.print(String("gain:") + gain);
-      delay(100);
-  }
-    delay(500);
-*/
-    
-  
-
-    prev_time = micros();
-    while(!(stopbutton()) && !(startbutton())){
-      int sensorLeft = analogRead(2);
-      int sensorRight = analogRead(3);
-      current_time = micros();
-      LCD.clear();
-      LCD.setCursor(0,0); 
-      LCD.print((int)sensorLeft + String(" ") + (int)sensorRight + String(" ") + pid);
-      
-      LCD.setCursor(0,1);
-
-      
-      //error = (sensorRight - rightDark) + (leftDark - sensorLeft);
-      if (sensorRight<rightDark && !(sensorLeft<leftDark)){
-        leftError = false;
-        error = 1;
-      }
-      else if ( !(sensorRight<rightDark) && sensorLeft<leftDark){
-        leftError = true;
-        error = -1;
-      }
-      else if (sensorRight<rightDark && sensorLeft<leftDark){
-        if(leftError){
-          error = -5;
-        }
-        else{
-          error = 5;
-        }
-      }
-      else{
-        error = 0;
-      }
-      derivative = 100000*(error - prev_error)/(current_time - prev_time);
-
-      pid = gain * (k_p*error + k_d*derivative);
-
-      prev_error = error;
-      prev_time = current_time;
-    
-      if( pid < 0 ){
-        motor.speed(motorLeft,default_speed);
-        motor.speed(motorRight,default_speed + pid);
-        LCD.print(default_speed + String(" ") + (default_speed+pid));
-              
-      }
-      else{
-        motor.speed(motorLeft,default_speed - pid);
-        motor.speed(motorRight,default_speed);
-        LCD.print((default_speed-pid) + String(" ") + (default_speed));
-      }
-      delay(50);
-
-    
+    else if ( !(sensorRight < rightDark) && sensorLeft < leftDark) {
+      leftError = true;
+      error = -1;
     }
+    else if (sensorRight < rightDark && sensorLeft < leftDark) {
+      if (leftError) {
+        error = -5;
+      }
+      else {
+        error = 5;
+      }
+    }
+    else {
+      error = 0;
+    }
+    derivative = 100000 * (error - prev_error) / (current_time - prev_time);
+
+    pid = gain * (k_p * error + k_d * derivative);
+
+    prev_error = error;
+    prev_time = current_time;
+
+    if ( pid < 0 ) {
+      motor.speed(motorLeft, default_speed);
+      motor.speed(motorRight, default_speed + pid);
+      LCD.print(default_speed + String(" ") + (default_speed + pid));
+
+    }
+    else {
+      motor.speed(motorLeft, default_speed - pid);
+      motor.speed(motorRight, default_speed);
+      LCD.print((default_speed - pid) + String(" ") + (default_speed));
+    }
+    delay(50);
+
+
+  }
 
   LCD.clear(); LCD.print("reeeeeee");
 
   motor.stop_all();
   delay(100);
+}
+
+void menuToggle() {
+  int sizeArray = sizeof(menu[0]);
+  int value = knob(6);
+  int menu_item = knob(7) * (sizeof(menu) / sizeArray) / 1024;
+  if (menu_item > (sizeof(menu) / sizeArray) - 1) {
+    menu_item = sizeof(menu) / sizeArray - 1;
+  }
+  else if (menu_item < 0) {
+    menu_item = 0;
+  }
+  LCD.clear(); LCD.home();
+  LCD.print( (String)menu[menu_item].getName() + " " );
+  LCD.print( (String)menu[menu_item].getValue() + " " );
+  LCD.setCursor(0,1); 
+  LCD.print( value );
+  if (stopbutton()) {
+    menu[menu_item].setValue(value);
+  }
+  delay(50);
 }
