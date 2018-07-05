@@ -3,36 +3,36 @@
 #include <avr/EEPROM.h>
 
 // Analog pin reference
-#define left_claw_servo    0
-#define right_claw_servo   1
-#define left_bridge_servo  2
-#define right_bridge_servo 3
-#define left_QRD           4
-#define right_QRD          5
-#define gyro_SCL           6
-#define gyro_SDA           7
+constexpr unsigned int left_claw_servo    0
+constexpr unsigned int right_claw_servo   1
+constexpr unsigned int left_bridge_servo  2
+constexpr unsigned int right_bridge_servo 3
+constexpr unsigned int left_QRD           4
+constexpr unsigned int right_QRD          5
+constexpr unsigned int gyro_SCL           6
+constexpr unsigned int gyro_SDA           7
 
 // Digital pin reference
-#define left_encoder       0
-#define right_encoder      1
-#define gyro_INT           2
-#define sonar_trig         3
-#define sonar_echo         4
-#define IR_signal_10kHz    5
-#define IR_signal_1kHz     6
-#define left_limit_switch  7
-#define right_limit_switch 8
-#define QSD                9
-#define IR_LED             10 
+constexpr unsigned int left_encoder       0
+constexpr unsigned int right_encoder      1
+constexpr unsigned int gyro_INT           2
+constexpr unsigned int sonar_trig         3
+constexpr unsigned int sonar_echo         4
+constexpr unsigned int IR_signal_10kHz    5
+constexpr unsigned int IR_signal_1kHz     6
+constexpr unsigned int left_limit_switch  7
+constexpr unsigned int right_limit_switch 8
+constexpr unsigned int QSD                9
+constexpr unsigned int IR_LED             10 
 
-const int delay_time = 400;
+cconstexpr unsigned int delay_time = 400;
 bool captured = false;
 
 // angle position of the arm and clas servos for various modes
-const int arm_raised = 0;
-const int arm_lowered = 135;
-const int claw_open = 0;
-const int claw_closed = 90;
+constexpr unsigned int arm_raised = 0;
+constexpr unsigned int arm_lowered = 135;
+constexpr unsigned int claw_open = 0;
+constexpr unsigned int claw_closed = 90;
 
 /* Purpose: Initialize the robot before activating
  * Input: none
