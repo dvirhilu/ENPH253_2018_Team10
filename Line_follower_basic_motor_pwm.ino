@@ -5,13 +5,13 @@
 
 //PID values
 
-MenuItem kp = MenuItem("k_p", (unsigned int*)1);
-MenuItem kd = MenuItem("k_d", (unsigned int*)2);
-MenuItem gainz = MenuItem("gainzz", (unsigned int*)3);
-MenuItem lDark = MenuItem("leftDark", (unsigned int*)4);
-MenuItem rDark = MenuItem("rightDark", (unsigned int*)5);
-MenuItem defaultSpeed = MenuItem("speeeeed", (unsigned int*)6);
-MenuItem menu[] = {kp, kd, gainz, lDark, rDark, defaultSpeed};
+MenuItem p_kp = MenuItem("k_p", (unsigned int*)1);
+MenuItem p_kd = MenuItem("k_d", (unsigned int*)2);
+MenuItem p_gain = MenuItem("gainzz", (unsigned int*)3);
+MenuItem a_lDark = MenuItem("leftDark", (unsigned int*)4);
+MenuItem a_rDark = MenuItem("rightDark", (unsigned int*)5);
+MenuItem m_motor = MenuItem("left_speeeeed", (unsigned int*)6);
+MenuItem menu[] = {p_kp, p_kd, p_gain, a_lDark, a_rDark, m_motor};
 
 int leftDark;
 int rightDark;
@@ -32,6 +32,13 @@ int derivative = 0;
 
 double pid;
 boolean leftError = true;
+
+int a_knob_thresh = 100;
+int s_knob_thresh = 270;
+int p_knob_thresh = 100;
+char analog_sensors = 'a';
+char servos = 's';
+char PID_constants = 'p';
 
 void setup() {
 #include <phys253setup.txt>
@@ -130,12 +137,26 @@ void menuToggle() {
   else if (menu_item < 0) {
     menu_item = 0;
   }
+  String itemName = (String)menu[menu_item].getName();
+  char firstChar = itemName.charAt(0);
   LCD.clear(); LCD.home();
-  LCD.print( (String)menu[menu_item].getName() + " " );
+  LCD.print( itemName + " " );
   LCD.print( (String)menu[menu_item].getValue() + " " );
-  LCD.setCursor(0,1); 
-  LCD.print( value );
-  if (stopbutton()) {
+  LCD.setCursor(0, 1);
+  if (firstChar == analog_sensors) {
+    LCD.print(a_knob_thresh * value / 1024);
+    menu[menu_item].setValue(a_knob_thresh * value / 1024);
+  }
+  else if (firstChar == servos) {
+    LCD.print(a_knob_thresh * value / 1024);
+    menu[menu_item].setValue(s_knob_thresh * value / 1024);
+  }
+  else if (firstChar == PID_constants) {
+    LCD.print(a_knob_thresh * value / 1024);
+    menu[menu_item].setValue(p_knob_thresh * value / 1024);
+  }
+  else {
+    LCD.print(value);
     menu[menu_item].setValue(value);
   }
   delay(50);
