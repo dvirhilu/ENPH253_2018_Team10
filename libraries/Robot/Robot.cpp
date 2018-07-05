@@ -34,17 +34,11 @@ const int arm_lowered = 135;
 const int claw_open = 0;
 const int claw_closed = 90;
 
-MenuItem::MenuItem( String item, unsigned int* address ) {
-  itemName = item;
-  EEPROMAddress = address;
-}
-
-
 /* Purpose: Initialize the robot before activating
  * Input: none
  * Output: none
  */
-void Initialize() {
+void Robot::Initialize() {
     RCServo0.write(arm_raised);
     RCServo1.write(arm_raised);
     
@@ -58,7 +52,7 @@ void Initialize() {
  * Output: none
  */
 
-void MenuItem::pickup(bool left_side){
+void Robot::pickup(bool left_side){
     motor.stop_all();
     
     // activate either the left or right pickup system base on the input
@@ -120,7 +114,7 @@ void MenuItem::pickup(bool left_side){
      * Output: none
      */
     
-    void MenuItem::displayLCD(char* message){
+    void Robot::displayLCD(char* message){
         LCD.clear(); LCD.home();
         LCD.setCursor(0, 0); LCD.print(message);
     }
