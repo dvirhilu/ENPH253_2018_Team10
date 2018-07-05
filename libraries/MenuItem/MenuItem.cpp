@@ -19,5 +19,5 @@ void MenuItem::setValue( int value ) {
 }
 
 int MenuItem::getEepNum(){
-	return EEPROMAddress;
+	return (int)EEPROMAddress;
 }
