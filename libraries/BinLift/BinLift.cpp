@@ -1,10 +1,11 @@
 #include "Arduino.h"
 #include "BinLift.h"
+#include "NewPing.h"
 
-BinLift::BinLift(int motor,int QRD, int thresh, int encoder){
+BinLift::BinLift(int motor,int sonar, int thresh, int encoder){
 	motorPin = motor;
-	QRDPin = QRD;
-	QRDthresh = thresh;
+	sonarPin = sonar;
+	sonarThresh = thresh;
 	endcoderPin = encoder;
 	pinMode(encoderPin, INPUT);
 	pinMode(QRDPin, INPUT);
@@ -21,7 +22,7 @@ return;
 }
 
 void BinLift::poll(){
-	if(analogRead(QRDPin) > QRDthresh){
+	if(digitalRead(sonarPin) > sonarThresh){
 		state = BinState::detected;
 	}
 return;

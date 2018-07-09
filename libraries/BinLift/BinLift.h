@@ -7,19 +7,20 @@
 
 #include "Arduino.h"
 #include "BinState.h"
+#include "NewPing.h"
 
 class BinLift
 {
   public:
-    BinLift(int motor,int QRD, int thresh, int encoder);
+    BinLift(int motor,int sonar, int thresh, int encoder);
     void raise();
 	void lower();
 	void poll();
   private:
     int motorPin;
-	int QRDPin;
+	int sonarPin;
 	int encoderPin;
-	int QRDthresh;
+	int sonarThresh;
 	BinState state;
 };
 
