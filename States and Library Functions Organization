@@ -1,0 +1,55 @@
+line 28 typo
+
+have one main code (Robot.ino)
+separate libraries for functions
+
+instead of booleans, use enums (can have more than 2 states)
+- ex. claw : picked up stuffy, not activated, detected, etc
+
+replace all delays with the non blocking poll() methods
+
+
+LIBRARIES:
+- StuffyRescue
+	States (StuffyState)
+	- search (arms raised, claws open) & detecting for stuffies
+	- detected (stop robot and move arms down towards stuffy)
+	- captured (stuffy inside the claws)
+	- fuckedUp (stuffy inside the bin)
+	Functions
+	- poll() : check if stuffy detected
+	- setup() : lower arm & open claws for capture
+	- pickup() : picks up stuffy & puts into the bin. checks if limit switch has been pressed
+**need code for failure handling & considering noise
+- bin lifting
+	States (BinState)
+	- search (bin down, searching for archway on the top)
+	- detected (archway detected, start rasing bin)
+	- lower (lower the bin) - not sure what the cue will be to start this
+	- end (crossed suspension bridge, so final lift)
+	Functions
+	- poll() : check if zipline above is detected
+	- raise() : raise lift
+	- lower() : lower lift
+- follow tape
+	States
+	- ??????
+	Functions
+	- ??????
+- bridge
+	States (BridgeState)
+	- stand by (wait until edge detected)
+	- edge detected
+	- align (use gyroscope to align perpendicular to the edge)
+	- 1st bridge
+	- 2nd bridge
+	Functions
+	- state : 1st bridge or second bridge
+- frequency detection
+	States (FreqState)
+	- off (before 1st bridge lay down or after the archway)
+	- 1kHz
+	- 10kHz before stuffy
+	- 10kHz after stuffy
+	Functions
+	- poll() : check for frequency signals
