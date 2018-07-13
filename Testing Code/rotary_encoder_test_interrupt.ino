@@ -1,8 +1,9 @@
-#include <phys253.h>
-#include <LiquidCrystal.h>
+//#include <phys253.h>
+//#include <LiquidCrystal.h>
+
 /* read a rotary encoder with interrupts
    Encoder hooked up with common to GROUND,
-   encoder0PinA to pin 2, encoder0PinB to pin 4 
+   encoder0PinA to pin 2, encoder0PinB to pin 3 
    it doesn't matter which encoder pin you use for A or B
 
    uses Arduino pull-ups on A & B channel outputs
@@ -16,9 +17,32 @@
 // https://playground.arduino.cc/Main/RotaryEncoders
 
 #define encoder0PinA  2
-#define encoder0PinB  4
+#define encoder0PinB  3
+#define clicks_per_revolution  40
 
-volatile unsigned int encoder0Pos = 0;
+volatile int encoder0Pos = 0;
+int current_time;
+int start_time = 0;
+int previous_pos;
+float rpm;
+int period = 500; // in millisecond
+
+void doEncoder() {
+  /* If pinA and pinB are both high or both low, it is spinning
+     forward. If they're different, it's going backward.
+  */
+  if (digitalRead(encoder0PinA) == digitalRead(encoder0PinB)) {
+    // clockwise
+    encoder0Pos++;
+  } else {
+    // counterclockwise
+    encoder0Pos--;
+  }
+
+  // uncomment the following two lines of code if you want to print the current position of the encoder
+  Serial.println("Position: ");
+  Serial.println(encoder0Pos, DEC);
+}
 
 void setup() {
   pinMode(encoder0PinA, INPUT);
@@ -29,31 +53,25 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(encoder0PinA), doEncoder, CHANGE);  // encoder pin on interrupt 0 - pin 2
   Serial.begin (9600);
   Serial.println("start");                // a personal quirk
+  current_time = millis();
+  previous_pos = encoder0Pos;
 }
 
 void loop() {
-  // do some stuff here - the joy of interrupts is that they take care of themselves
-}
-
-void doEncoder() {
-  /* If pinA and pinB are both high or both low, it is spinning
-     forward. If they're different, it's going backward.
-
-     For more information on speeding up this process, see
-     [Reference/PortManipulation], specifically the PIND register.
-  */
-  if (digitalRead(encoder0PinA) == digitalRead(encoder0PinB)) {
-    // clockwise
-    encoder0Pos++;
-  } else {
-    // counterclockwise
-    encoder0Pos--;
+ 
+  // calculate rpm once every period
+  if(millis() - current_time >= period) {
+    rpm = 60.0 * ((encoder0Pos - previous_pos) / float(clicks_per_revolution))/(period / 1000.0);
+    
+    // uncomment the following two lines of code if you want to print the rpm
+    //Serial.println("RPM: ");
+    //Serial.println(rpm);
+    
+    current_time = millis();
+    previous_pos = encoder0Pos;
   }
-
-  Serial.println("Position: ");
-  Serial.println(encoder0Pos, DEC);
+  
 }
-
 
 
 /*  to read the other two transitions - just use another attachInterrupt()
