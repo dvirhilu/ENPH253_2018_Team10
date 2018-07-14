@@ -1,7 +1,7 @@
 #include <phys253.h>
 #include <LiquidCrystal.h>
 #include<MenuItem.h>
-#include<avr/EEPROM.h>\
+#include<avr/EEPROM.h>
 //PID values
 
 constexpr int motorLeft = 1;
@@ -65,7 +65,7 @@ void loop() {
     }
     int sensorLeft = analogRead(sensorLeftPin);
     int sensorRight = analogRead(sensorRightPin);
-    current_time = micros();
+    current_time = micros() / 1000000.0;
     LCD.clear();
     LCD.setCursor(0, 0);
     LCD.print((int)sensorLeft + String(" ") + (int)sensorRight + String(" ") + error + String(" ") + derivative);
