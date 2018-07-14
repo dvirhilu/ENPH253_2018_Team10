@@ -36,8 +36,6 @@ boolean leftError = true;
 char analog_sensors = 'a';
 char servos = 's';
 char PID_constants = 'p';
-bool analog = false;
-bool digital = false;
 
 void setup() {
 #include <phys253setup.txt>
@@ -45,25 +43,6 @@ void setup() {
 }
 
 void loop() {
-  while (true) {
-    LCD.clear(); LCD.home();
-    LCD.print("Start for dig");
-    LCD.setCursor(0, 1);
-    LCD.print("Stop for analog");
-    delay(100);
-    if ( stopbutton()) {
-      analog = true;
-      Serial.println("analog");
-      break;
-    }
-    if ( startbutton()) {
-      digital = true;
-      Serial.println("digital");
-      break;
-    }
-  }
-  delay(500);
-
   while (!startbutton()) {
     menuToggle();
   }
@@ -77,14 +56,12 @@ void loop() {
   default_speed = menu[5].getValue();
   prev_time = micros();
 
-  //if ( analog == true && digital == false) {
-  //if (true) {
   LCD.print("analog ree");
   delay(1000);
   while (!(stopbutton()) && !(startbutton())) {
-    if( digitalRead(stuffyComPin) ){
-      motors.stop_all();
-      while( digitalRead(stuffyComPin) ){}
+    if ( digitalRead(stuffyComPin) ) {
+      motor.stop_all();
+      while ( digitalRead(stuffyComPin) ) {}
     }
     int sensorLeft = analogRead(sensorLeftPin);
     int sensorRight = analogRead(sensorRightPin);
@@ -95,8 +72,6 @@ void loop() {
 
     LCD.setCursor(0, 1);
 
-
-    //error = (sensorRight - rightDark) + (leftDark - sensorLeft);
     if (sensorRight < rightDark && !(sensorLeft < leftDark)) {
       leftError = false;
       error =  rightDark - sensorRight;
@@ -138,58 +113,7 @@ void loop() {
     }
     delay(50);
   }
-  //}
-  /*else {
 
-    LCD.print("digital ree");
-    delay(1000);
-    while (!(stopbutton()) && !(startbutton())) {
-      int sensorLeft = analogRead(sensorLeftPin);
-      int sensorRight = analogRead(sensorRightPin);
-      current_time = micros();
-      LCD.clear();
-      LCD.setCursor(0, 0);
-      LCD.print(error + String( " " ) + derivative + String(" ") + pid);
-      LCD.setCursor(0, 1);
-      //error = (sensorRight - rightDark) + (leftDark - sensorLeft);
-      if (sensorRight < rightDark && !(sensorLeft < leftDark)) {
-        leftError = false;
-        error = 1;
-      }
-      else if ( !(sensorRight < rightDark) && sensorLeft < leftDark) {
-        leftError = true;
-        error = -1;
-      }
-      else if (sensorRight < rightDark && sensorLeft < leftDark) {
-        if (leftError) {
-          error = -5;
-        }
-        else {
-          error = 5;
-        }
-      }
-      else {
-        error = 0;
-      }
-      derivative = 100000 * (error - prev_error) / (current_time - prev_time);
-      pid = gain * (k_p * error + k_d * derivative);
-      prev_error = error;
-      prev_time = current_time;
-      if ( pid < 0 ) {
-        motor.speed(motorLeft, default_speed - 0.5*pid);
-        motor.speed(motorRight, default_speed + 0.5*pid);
-        LCD.print((default_speed - pid) + String(" ") + default_speed);
-      }
-      else {
-        motor.speed(motorLeft, default_speed - 0.5*pid);
-        motor.speed(motorRight, default_speed + 0.5*pid);
-        LCD.print((default_speed) + String(" ") + (default_speed + pid));
-      }
-      delay(50);
-
-
-    }
-    }*/
   LCD.clear(); LCD.print("reeeeeee");
   delay(500);
   motor.stop_all();
