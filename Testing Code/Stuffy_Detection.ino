@@ -51,11 +51,6 @@ void loop() {
     digitalWrite(stuffyComPin, HIGH);
     Serial.println("detected");
     arm.write(20); // change this after testing
-    /*
-      while (current_time < 400 + start_time) {
-      current_time = millis();
-      }
-    */
     delay(2000);
     claw.write(clawAngle + 28);
     while (true) {
@@ -64,11 +59,8 @@ void loop() {
         break;
       }
     }
-    arm.write(200);
-    /*while (current_time < 1000 + start_time) {
-      current_time = millis();
-      }*/
-    delay(2000);
+    arm.write(200); // angle onto the bin (max angle we can have)
+    delay(2000); // change this timing after testing
     claw.write(clawAngle);
     arm.write(armAngle);
     delay(500);
