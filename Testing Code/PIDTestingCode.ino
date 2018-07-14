@@ -11,6 +11,7 @@ constexpr int sensorRightPin = 3;
 constexpr int a_knob_thresh = 100;
 constexpr int s_knob_thresh = 270;
 constexpr int p_knob_thresh = 200;
+constexpr int stuffyComPin = 11;
 
 MenuItem kp = MenuItem("p_k_p", (unsigned int*)1);
 MenuItem kd = MenuItem("p_k_d", (unsigned int*)5);
@@ -81,6 +82,10 @@ void loop() {
   LCD.print("analog ree");
   delay(1000);
   while (!(stopbutton()) && !(startbutton())) {
+    if( digitalRead(stuffyComPin) ){
+      motors.stop_all();
+      while( digitalRead(stuffyComPin) ){}
+    }
     int sensorLeft = analogRead(sensorLeftPin);
     int sensorRight = analogRead(sensorRightPin);
     current_time = micros();
