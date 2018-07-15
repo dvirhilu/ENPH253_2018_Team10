@@ -1,0 +1,10 @@
+PID	KEYWORD1
+setKp	KEYWORD2
+setKd	KEYWORD2
+setGain	KEYWORD2
+setLeftDark	KEYWORD2
+setRightDark	KEYWORD2
+setDefaultSpeed	KEYWORD2
+setPrevTime	KEYWORD2
+getPID	KEYWORD2
+tapeFollow	KEYWORD2
