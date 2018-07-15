@@ -79,22 +79,7 @@ void loop() {
       while ( digitalRead(stuffyComPin) ) {}
       }
     */
-    while (stuffyCount == 2 && archPassed == false) {
-      if (analogRead(tenkHzThresh) > tenkHzThresh) {
-        motor.stop_all();
-        while (analogRead(onekHzPin) < onekHzThresh) {}
-        while (analogRead(tenkHzPin) < tenkHzThresh) {}
-        archPassed == true;
-        break;
-      }
-      else if (analogRead(onekHzPin) > onekHzThresh) {
-        motor.stop_all();
-        while (analogRead(tenkHzPin) < tenkHzThresh) {}
-        archPassed == true;
-        break;
-      }
-      PID();
-    }
+    FrequencyDetection();
     PID();
   }
 
@@ -102,6 +87,25 @@ void loop() {
   delay(500);
   motor.stop_all();
   delay(100);
+}
+
+void FrequencyDetection() {
+  while (stuffyCount == 2 && archPassed == false) {
+    if (analogRead(tenkHzPin) > tenkHzThresh) {
+      motor.stop_all();
+      while (analogRead(onekHzPin) < onekHzThresh) {}
+      while (analogRead(tenkHzPin) < tenkHzThresh) {}
+      archPassed == true;
+      break;
+    }
+    else if (analogRead(onekHzPin) > onekHzThresh) {
+      motor.stop_all();
+      while (analogRead(tenkHzPin) < tenkHzThresh) {}
+      archPassed == true;
+      break;
+    }
+    PID();
+  }
 }
 
 void PID() {
