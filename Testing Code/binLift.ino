@@ -9,6 +9,7 @@
 //Pinout
 constexpr int motorLeft = 1;
 constexpr int motorRight = 0;
+constexpr int motorlift = 2;
 constexpr int sensorLeftPin = 0;
 constexpr int sensorRightPin = 1;
 constexpr int onekHzPin = 2;
@@ -58,6 +59,8 @@ int duration = 0;
 double distance_sonar_arch = 0.3; // in meters
 
 double sonarThreshold = (distance_sonar_arch * 2 / 343) * 1000000; 
+int liftingSpeed = 100; // the speed to lift the bins
+
 // in microseconds - the time for the sonar to detect the signal if an object is 30 cm above 
 // if the sonar echo still did not detect the HIGH signal after this amount of time, there is nothing above. 
 
@@ -116,23 +119,38 @@ void loop() {
     }
     PID();
 
-    while (duration == 0 && overheadCount == 0) {
-      // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
-      // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
-      digitalWrite(trigPin, LOW);
-      delayMicroseconds(5);
-      digitalWrite(trigPin, HIGH);
-      delayMicroseconds(10);
-      digitalWrite(trigPin, LOW);
-
-      // Read the signal from the sensor: a HIGH pulse whose
-      // duration is the time (in microseconds) from the sending
-      // of the ping to the reception of its echo off of an object.
-      duration = pulseIn(echoPin, HIGH, sonarThreshold);
-    }
-    overheadCount = 1;
-    binLift();
+    // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
+    // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(5);
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
     
+    // Read the signal from the sensor: a HIGH pulse whose
+    // duration is the time (in microseconds) from the sending
+    // of the ping to the reception of its echo off of an object.
+    duration = pulseIn(echoPin, HIGH, sonarThreshold);
+
+    // passing the archway 
+    while (duration != 0 && overheadCount == 0) {
+      PID();
+      // passed the archway 
+      if(duration == 0) {
+        overheadCount = 1;
+        delay(300); // let the whole robot pass the arch
+        motor.stop_all();
+        binLift1();
+        int start_time = millis();
+        while(/*1st limit switch is pressed (which indicate the 1st bin is not hooked to zipline yet)*/){
+          PID();
+          current_time = millis();
+        }
+        
+        binLower();
+        break;
+      }
+    }
   }
 
   LCD.clear(); LCD.print("reeeeeee");
@@ -141,10 +159,33 @@ void loop() {
   delay(100);
 }
 
-// the program to lift the bin after the archway is detected
-void binLift() {
-  delay(100);
+// the program to lift the 1st bin after the archway is detected
+void binLift1() {
+  while(/*rotary encoder has not yet reached the bin 1 threshold height*/) {
+    motorSpeed(motorLift, liftingSpeed);
+    delay(250);
+  }
+  motorSpeed(motorLift, 0);
 }
+
+// the program to lift the 2nd bin after the archway is detected
+void binLift2() {
+  while(/*rotary encoder has not yet reached the bin 2 threshold height*/) {
+    motorSpeed(motorLift, liftingSpeed);
+    delay(250);
+  }
+  motorSpeed(motorLift, 0);
+}
+
+// the program to lower the bin after the bin is hooked to the zipline
+void binLower() {
+  while(/*rotary encoder has not yet reached the bin minimum threshold height*/) {
+    motorSpeed(motorLift, -liftingSpeed);
+    PID();
+  }
+  motorSpeed(motorLift, 0);
+}
+
 
 void PID() {
   int sensorLeft = analogRead(sensorLeftPin);
