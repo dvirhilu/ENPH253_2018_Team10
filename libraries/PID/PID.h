@@ -2,13 +2,16 @@
 #define PID_h
 
 #include "Arduino.h"
+#include "phys253.h"
+#include "LiquidCrystal.h"
 
 class PID
 {
   public:
     PID( int leftPin, int rightPin, int leftMotorPin, int rightMotorPin );
+    void initialize();
+    void setKp( int kp );
     void setKd( int kd );
-    void setKp( int kp);
     void setGain( int gainz );
     void setLeftDark( int lDark );
     void setRightDark( int rDark );
@@ -26,13 +29,9 @@ class PID
     int gain;
     int k_p;
     int k_d;
-    //double current_time;
     double prev_time;
-    //double error = 0;
     double prev_error;
-    //int derivative = 0;
-    //double pid;
-    //boolean leftError = true;
+    boolean leftError;
 };
 
 #endif
