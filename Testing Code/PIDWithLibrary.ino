@@ -22,7 +22,8 @@ MenuItem gainz = MenuItem("p_gainzz", (unsigned int*)9);
 MenuItem lDark = MenuItem("a_leftDark", (unsigned int*)13);
 MenuItem rDark = MenuItem("a_rightDark", (unsigned int*)17);
 MenuItem motor_speed = MenuItem("m_speeeeed", (unsigned int*)21);
-MenuItem menu[] = {kp, kd, gainz, lDark, rDark, motor_speed};
+MenuItem percent = MenuItem("percentage", (unsigned int*)25);
+MenuItem menu[] = {kp, kd, gainz, lDark, rDark, motor_speed, percent};
 
 char analog_sensors = 'a';
 char servos = 's';
@@ -51,6 +52,7 @@ void loop() {
   pid.setLeftDark( lDark.getValue() );
   pid.setRightDark( rDark.getValue() );
   pid.setDefaultSpeed( motor_speed.getValue() );
+  pid.setRatio( percent.getValue() );
   pid.initialize();
 
   LCD.clear(); LCD.home();
