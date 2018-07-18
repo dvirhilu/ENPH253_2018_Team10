@@ -5,7 +5,7 @@ PID::PID( int leftPin, int rightPin, int leftMotorPin, int rightMotorPin ) {
   pinLeft = leftPin;
   pinRight = rightPin;
   motorLeft = leftMotorPin;
-  motorRight' = rightMotorPin;
+  motorRight = rightMotorPin;
   leftDark = 0;
   rightDark = 0;
   default_speed = 0;
@@ -16,7 +16,7 @@ PID::PID( int leftPin, int rightPin, int leftMotorPin, int rightMotorPin ) {
   prev_error = 0;
 }
 
-void PID::initizlize(){
+void PID::initialize(){
   prev_time = micros()/1000000.0;
 }
 
@@ -44,19 +44,17 @@ void PID::initizlize(){
   default_speed = motorSpeed;
 }
 
-  double PID::double getPID(){
-  int sensorLeft = analogRead(sensorLeftPin);
-  int sensorRight = analogRead(sensorRightPin);
+  void PID::setRatio( int percentage ) {
+  ratio = percentage;
+}
+
+  double PID::getPID(){
+  int sensorLeft = analogRead(pinLeft);
+  int sensorRight = analogRead(pinRight);
   double current_time = micros()/1000000.0;
   double error = 0;
   double derivative = 0;
   double pid;
-
-  LCD.clear();
-  LCD.setCursor(0, 0);
-  LCD.print((int)sensorLeft + String(" ") + (int)sensorRight + String(" ") + error + String(" ") + derivative);
-
-  LCD.setCursor(0, 1);
 
 
   //error = (sensorRight - rightDark) + (leftDark - sensorLeft);
@@ -80,6 +78,11 @@ void PID::initizlize(){
   error = 0;
 }
 
+LCD.clear();
+  LCD.setCursor(0, 0);
+  LCD.print((int)sensorLeft + String(" ") + (int)sensorRight + String(" ") + error + String(" ") + derivative);
+
+  LCD.setCursor(0, 1);
   derivative = (error - prev_error) / (current_time - prev_time);
 
   pid = gain * (k_p / 10.0 * error + k_d / 10.0 * derivative);
@@ -95,16 +98,15 @@ void PID::initizlize(){
   double pid = getPID();
 
   if ( pid < 0 ) {
-  motor.speed(motorLeft, default_speed - 0.5 * pid);
-  motor.speed(motorRight, default_speed + 0.5 * pid);
-  LCD.print((default_speed - pid) + String(" ") + default_speed);
+  motor.speed(motorLeft, default_speed - (ratio/100.0) * pid);
+  motor.speed(motorRight, default_speed + (1-ratio/100.0) * pid);
+  LCD.print((default_speed - (ratio/100.0)*pid) + String(" ") + default_speed + (1-ratio/100.0)*pid);
 
 }
   else {
-  motor.speed(motorLeft, default_speed - 0.5 * pid);
-  motor.speed(motorRight, default_speed + 0.5 *
-  pid);
-  LCD.print((default_speed) + String(" ") + (default_speed + pid));
+  motor.speed(motorLeft, default_speed - (1-ratio/100.0) * pid);
+  motor.speed(motorRight, default_speed + (ratio/100.0) * pid);
+  LCD.print((default_speed - (1-ratio/100.0)*pid) + String(" ") + (default_speed + (ratio/100.0)*pid));
 }
   delay(50);
 }

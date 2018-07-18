@@ -16,6 +16,7 @@ class PID
     void setLeftDark( int lDark );
     void setRightDark( int rDark );
     void setDefaultSpeed( int motorSpeed );
+	void setRatio(int percentage);
     double getPID();
     void tapeFollow();
   private:
@@ -29,6 +30,7 @@ class PID
     int gain;
     int k_p;
     int k_d;
+	int ratio;
     double prev_time;
     double prev_error;
     boolean leftError;
