@@ -48,6 +48,10 @@ void PID::initialize(){
   ratio = percentage;
 }
 
+void PID::setEdgeThresh( int thresh ){
+	edgeThresh = thresh;
+}
+
   double PID::getPID(){
   int sensorLeft = analogRead(pinLeft);
   int sensorRight = analogRead(pinRight);
@@ -108,6 +112,12 @@ LCD.clear();
   motor.speed(motorRight, default_speed + (ratio/100.0) * pid);
   LCD.print((default_speed - (1-ratio/100.0)*pid) + String(" ") + (default_speed + (ratio/100.0)*pid));
 }
-  delay(50);
+  delay(30);
 }
 
+bool PID::isEdge() {
+	if( analogRead(pinLeft) > edgeThresh && analogRead(pinRight) > edgeThresh){
+		return true;
+	}
+	return false;
+}

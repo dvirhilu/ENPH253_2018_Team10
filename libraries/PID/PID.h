@@ -17,8 +17,10 @@ class PID
     void setRightDark( int rDark );
     void setDefaultSpeed( int motorSpeed );
 	void setRatio(int percentage);
+	void setEdgeThresh( int thresh );
     double getPID();
     void tapeFollow();
+	bool isEdge();
   private:
     int pinLeft;
     int pinRight;
@@ -31,6 +33,7 @@ class PID
     int k_p;
     int k_d;
 	int ratio;
+	int edgeThresh;
     double prev_time;
     double prev_error;
     boolean leftError;
