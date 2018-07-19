@@ -158,16 +158,14 @@ void initialScreen() {
  * Purpose: place the first bridge 
  */
 void placeBridge1() {
-  int motorLeftPin = 1;
-  int motorRightPin = 0;
   int bridgeServoPin = 3;
   int initialAngle = 0;
   int finalAngle = 45;
   int backupSpeed = -120;
 
   // back up for a short distance to drop the bridge
-  motor.speed(motorLeftPin, backupSpeed);
-  motor.speed(motorRightPin, backupSpeed);
+  motor.speed(motorLeft, backupSpeed);
+  motor.speed(motorRight, backupSpeed);
 
   delay(400);
   motor.stop_all();
@@ -178,14 +176,14 @@ void placeBridge1() {
   delay(1000);
 
   // back up for a short distance to completely lay down the bridge
-  motor.speed(motorLeftPin, backupSpeed);
-  motor.speed(motorRightPin, backupSpeed);
+  motor.speed(motorLeft, backupSpeed);
+  motor.speed(motorRight, backupSpeed);
   delay(300);
   motor.stop_all();
 
   // move forward and start tape following as soon as the tape is detected
-  motor.speed(motorLeftPin, -backupSpeed);
-  motor.speed(motorRightPin, -backupSpeed);
+  motor.speed(motorLeft, -backupSpeed);
+  motor.speed(motorRight, -backupSpeed);
   delay(1000);
 }
 
@@ -199,7 +197,14 @@ void afterBridge1Correction() {
 /*
  * Purpose: check the frequency of the IR beacon and respond accordingly
  */
+
+ 
 void FrequencyDetection() {
+  int tenkHzPin;
+  int tenkHzThresh;
+  int onekHzPin;
+  int onekHzThresh;
+  
   while (stuffyCount == 2 && archPassed == false) {
     if (analogRead(tenkHzPin) > tenkHzThresh) {
       motor.stop_all();
@@ -315,4 +320,3 @@ void zipline1() {
     }
   }
 }
-
