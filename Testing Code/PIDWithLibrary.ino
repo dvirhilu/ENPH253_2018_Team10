@@ -12,7 +12,7 @@ constexpr int sensorRightPin = 3;
 constexpr int a_knob_thresh = 100;
 constexpr int s_knob_thresh = 270;
 constexpr int p_knob_thresh = 200;
-constexpr int stuffyComPin = 11;
+constexpr int stuffyComPin = 12;
 
 PID pid( sensorLeftPin, sensorRightPin, motorLeft, motorRight );
 
@@ -22,8 +22,9 @@ MenuItem gainz = MenuItem("p_gainzz", (unsigned int*)9);
 MenuItem lDark = MenuItem("a_leftDark", (unsigned int*)13);
 MenuItem rDark = MenuItem("a_rightDark", (unsigned int*)17);
 MenuItem motor_speed = MenuItem("m_speeeeed", (unsigned int*)21);
-MenuItem percent = MenuItem("percentage", (unsigned int*)25);
-MenuItem menu[] = {kp, kd, gainz, lDark, rDark, motor_speed, percent};
+MenuItem percent = MenuItem("p_percentage", (unsigned int*)25);
+MenuItem edgeThresh = MenuItem("edgeThresh", (unsigned int*)29);
+MenuItem menu[] = {kp, kd, gainz, lDark, rDark, motor_speed, percent, edgeThresh};
 
 char analog_sensors = 'a';
 char servos = 's';
@@ -53,14 +54,36 @@ void loop() {
   pid.setRightDark( rDark.getValue() );
   pid.setDefaultSpeed( motor_speed.getValue() );
   pid.setRatio( percent.getValue() );
+  pid.setEdgeThresh( edgeThresh.getValue() );
   pid.initialize();
 
   LCD.clear(); LCD.home();
   LCD.print("REEEEEEEEEE");
   delay(1000);
 
+
   while (!(stopbutton()) && !(startbutton())) {
     pid.tapeFollow();
+    
+    if ( digitalRead(stuffyComPin) == HIGH ) {
+      LCD.clear(); LCD.home();
+      LCD.print("CAUGHT");
+      delay(50);
+      motor.stop_all();
+      while ( digitalRead(stuffyComPin) == HIGH ) {
+        LCD.clear(); LCD.home();
+        LCD.print("INSIDE");
+        delay(50);
+      }
+      LCD.clear(); LCD.home();
+      LCD.print("OUTSIDE");
+      delay(50);
+      LCD.clear(); LCD.home();
+    }
+    if(pid.isEdge()){
+      motor.stop_all();
+      break;
+    }
   }
 
   LCD.clear(); LCD.print("reeeeeee");

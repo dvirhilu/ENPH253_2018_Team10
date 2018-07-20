@@ -23,6 +23,8 @@ int readingHighLeft = 0;
 int readingLowLeft = 0;
 int readingHighRight = 0;
 int readingLowRight = 0;
+int countLeft = 0;
+int countRight = 0;
 Servo clawLeft;
 Servo armLeft;
 Servo clawRight;
@@ -67,68 +69,92 @@ void loop() {
     }
     //Serial.println(readingHigh + String(" ") + readingLow + String(" ") + (readingHigh - readingLow));
     if (readingHighLeft - readingLowLeft > threshold) {
-      delay(600); // add delay before stopping (sending HIGH to the TINAH)
-      digitalWrite(stuffyComPin, HIGH);
-      Serial.println("detected");
-      armLeft.write(20); // change this after testing
-      /*
-        while (current_time < 400 + start_time) {
-        current_time = millis();
-        }
-      */
-      delay(2000);
-      clawLeft.write(clawAngle + 28);
-      delay(1000);
-      /*
-        while (true) {
-        if (digitalRead(switchPin) == 0) {
-          Serial.println("captured");
-          break;
-        }
-        }
-      */
-      armLeft.write(200);
-      /*while (current_time < 1000 + start_time) {
-        current_time = millis();
-        }*/
-      delay(2000);
-      clawLeft.write(clawAngle);
-      delay(500);
-      armLeft.write(armAngle);
-      delay(1000);
-      digitalWrite(stuffyComPin, LOW);
+      countLeft++;
     }
-    else if (readingHighRight - readingLowRight > threshold) {
-      delay(600); // add delay before stopping (sending HIGH to the TINAH)
-      digitalWrite(stuffyComPin, HIGH);
-      Serial.println("detected");
-      armRight.write(20); // change this after testing
-      /*
-        while (current_time < 400 + start_time) {
-        current_time = millis();
-        }
-      */
-      delay(2000);
-      clawRight.write(clawAngle + 28);
-      delay(1000);
-      /*
-        while (true) {
-        if (digitalRead(switchPin) == 0) {
-          Serial.println("captured");
-          break;
-        }
-        }
-      */
-      armRight.write(200);
-      /*while (current_time < 1000 + start_time) {
-        current_time = millis();
-        }*/
-      delay(2000);
-      clawRight.write(clawAngle);
-      delay(500);
-      armRight.write(armAngle);
-      delay(1000);
-      digitalWrite(stuffyComPin, LOW);
+    else {
+      countLeft = 0;
+    }
+    if (readingHighRight - readingLowRight > threshold) {
+      countRight++;
+    }
+    else {
+      countRight = 0;
+    }
+    if ( countLeft > 3 ) {
+      leftDetection();
+      countLeft = 0;
+    }
+    if ( countRight > 3 ) {
+      rightDetection();
+      countRight = 0;
     }
   }
 }
+
+void leftDetection() {
+  delay(600); // add delay before stopping (sending HIGH to the TINAH)
+  digitalWrite(stuffyComPin, HIGH);
+  Serial.println("detected");
+  armLeft.write(20); // change this after testing
+  /*
+    while (current_time < 400 + start_time) {
+    current_time = millis();
+    }
+  */
+  delay(2000);
+  clawLeft.write(clawAngle + 28);
+  delay(1000);
+  /*
+    while (true) {
+    if (digitalRead(switchPin) == 0) {
+      Serial.println("captured");
+      break;
+    }
+    }
+  */
+  armLeft.write(200);
+  /*while (current_time < 1000 + start_time) {
+    current_time = millis();
+    }*/
+  delay(2000);
+  clawLeft.write(clawAngle);
+  delay(500);
+  armLeft.write(armAngle);
+  delay(1000);
+  digitalWrite(stuffyComPin, LOW);
+}
+
+
+void rightDetection() {
+  delay(600); // add delay before stopping (sending HIGH to the TINAH)
+  digitalWrite(stuffyComPin, HIGH);
+  Serial.println("detected");
+  armRight.write(20); // change this after testing
+  /*
+    while (current_time < 400 + start_time) {
+    current_time = millis();
+    }
+  */
+  delay(2000);
+  clawRight.write(clawAngle + 28);
+  delay(1000);
+  /*
+    while (true) {
+    if (digitalRead(switchPin) == 0) {
+      Serial.println("captured");
+      break;
+    }
+    }
+  */
+  armRight.write(200);
+  /*while (current_time < 1000 + start_time) {
+    current_time = millis();
+    }*/
+  delay(2000);
+  clawRight.write(clawAngle);
+  delay(500);
+  armRight.write(armAngle);
+  delay(1000);
+  digitalWrite(stuffyComPin, LOW);
+}
+
