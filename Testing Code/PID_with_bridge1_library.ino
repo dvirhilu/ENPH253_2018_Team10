@@ -6,8 +6,10 @@
 #include<MenuItem.h>
 #include<avr/EEPROM.h>
 #include <PID.h>
-//PID values
+#include <Servo.h>
+//#include <StuffyRescue.h>
 
+//PID values
 constexpr int motorLeft = 2;
 constexpr int motorRight = 0;
 constexpr int sensorLeftPin = 0;
@@ -15,10 +17,6 @@ constexpr int sensorRightPin = 3;
 constexpr int a_knob_thresh = 100;
 constexpr int s_knob_thresh = 270;
 constexpr int p_knob_thresh = 200;
-constexpr int stuffyComPin = 11;
-// Bridge 
-bool bridge1Placed = false;
-int edgeThreshold = 300;
 
 // sonar pins 
 constexpr int trigPin = 8; // digital Output 
@@ -26,13 +24,65 @@ constexpr int echoPin = 0; //digital Input
 bool archPassed = false;
 
 // Bin Lift pins
-constexpr int potPin = 0; // analog
-constexpr int liftMotorPin = 3; // DC Motor pin #3 
+constexpr int potPin = 0; // analog pin for potentiometer
+constexpr int liftMotorPin = 3; // DC Motor pin #3 for GM7
 
-// stuffy 
-int stuffyCount = 0;
+// stuffy rescue
+constexpr int stuffyComPin = 12;
 
-PID pid( sensorLeftPin, sensorRightPin, motorLeft, motorRight );
+int pulseLeft = 7;
+int pulseRight = 8;
+int sensorLeft = 0;
+int sensorRight = 1;
+int clawPinLeft = 9;
+int armPinLeft = 10;
+int clawPinRight = 5;
+int armPinRight = 6;
+
+// threshold values
+int threshold = 150; // IR reading threshold
+int clawAngle = 0; // servo starting angle (open position)
+int armAngle = 150; // arm servo starting anlge (lifted position)
+// initialize variables
+int start_time = 0;
+int current_time = 0;
+int readingHighLeft = 0;
+int readingLowLeft = 0;
+int readingHighRight = 0;
+int readingLowRight = 0;
+Servo clawLeft;
+Servo armLeft;
+Servo clawRight;
+Servo armRight;
+
+
+constexpr int stuffyCount = 0;
+/*
+constexpr int IRThreshold = 0; // user change this 
+constexpr int limitSwitchLeft; // add pin # 
+constexpr int limitSwitchRight; // add pin # 
+constexpr int armLeft; // add pin # 
+constexpr int armRight; // add pin # 
+constexpr int clawLeft; // add pin # 
+constexpr int clawRight; // add pin # 
+constexpr int sensorLeft; // add pin # 
+constexpr int sensorRight; // add pin # 
+constexpr int LEDLeft; // add pin # 
+constexpr int LEDRight; // add pin # 
+*/
+
+// bridge 
+constexpr int bridgeServoPin = 5;
+constexpr int initialAngle = 0; // For servo mounted on the left side of the robot 
+// int initialAngle = 180; // For servo mounted on the right side of the robot 
+bool bridge1Placed = false;
+
+// Instances
+PID pid( sensorLeftPin, sensorRightPin, motorLeft, motorRight);
+/*
+StuffyRescue stuffyLeft( limitSwitchLeft, armLeft, clawLeft, sensorLeft, LEDLeft);
+StuffyRescue stuffyRight(limitSwitchRight, armRight, clawRight, sensorRight, LEDRight);
+*/
 
 MenuItem kp = MenuItem("p_k_p", (unsigned int*)1);
 MenuItem kd = MenuItem("p_k_d", (unsigned int*)5);
@@ -41,7 +91,8 @@ MenuItem lDark = MenuItem("a_leftDark", (unsigned int*)13);
 MenuItem rDark = MenuItem("a_rightDark", (unsigned int*)17);
 MenuItem motor_speed = MenuItem("m_speeeeed", (unsigned int*)21);
 MenuItem percent = MenuItem("percentage", (unsigned int*)25);
-MenuItem menu[] = {kp, kd, gainz, lDark, rDark, motor_speed, percent};
+MenuItem edgeThresh = MenuItem("edgeThresh", (unsigned int*)29);
+MenuItem menu[] = {kp, kd, gainz, lDark, rDark, motor_speed, percent, edgeThresh};
 char analog_sensors = 'a';
 char servos = 's';
 char PID_constants = 'p';
@@ -49,12 +100,35 @@ char PID_constants = 'p';
 void setup() {
   #include <phys253setup.txt>
   Serial.begin(9600);
+
+  // Stuffy Rescue Set up 
+  /*
+  pinMode(pulseLeft, OUTPUT);
+  pinMode(sensorLeft, INPUT);
+  pinMode(pulseRight, OUTPUT);
+  pinMode(sensorRight, INPUT);
+  pinMode(stuffyComPin, OUTPUT);
+  clawLeft.attach(clawPinLeft);
+  armLeft.attach(armPinLeft);
+  clawRight.attach(clawPinRight);
+  armRight.attach(armPinRight);
+ 
+  digitalWrite(stuffyComPin, LOW);
+  clawLeft.write(clawAngle);
+  armLeft.write(armAngle);
+  clawRight.write(clawAngle);
+  armRight.write(armAngle);
+  delay(1000);
+ 
+  // sonar set up 
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
+  */
+  // bridge servo set up 
 }
 
 void loop() {
-
+  RCServo0.write(0); 
   while ( !startbutton() ) {
     initialScreen();
   }
@@ -72,6 +146,7 @@ void loop() {
   pid.setRightDark( rDark.getValue() );
   pid.setDefaultSpeed( motor_speed.getValue() );
   pid.setRatio( percent.getValue() );
+  pid.setEdgeThresh( edgeThresh.getValue() );
   pid.initialize();
 
   LCD.clear(); LCD.home();
@@ -80,27 +155,32 @@ void loop() {
 
   while (!(stopbutton()) && !(startbutton())) {
     pid.tapeFollow();
-
-    // Edge Detection Check 
-    if(bridge1Placed == false && analogRead(sensorLeftPin) > edgeThreshold) {
+    //stuffyRescue();
+    
+    // 1st and 2nd Stuffy Detection (on the right side of the robot)
+    //if(stuffyCount < 2) {
+    //}
+    
+    // Edge Detection Check to place 1st bridge 
+    if( pid.isEdge() ) {
+      LCD.clear(); LCD.home();
+      LCD.print( "edge detected" );
+      delay(50);
       placeBridge1();
       bridge1Placed = true;
     }
-
-    // After Crossing Bridge 1, Left Turn Correction Stage
-    if(bridge1Placed == true && (analogRead(sensorRightPin) < rDark.getValue())) {
-      afterBridge1Correction();
-    }
-
+    
     // IR Frequency Detection Stage
-    if(stuffyCount == 2 && archPassed == false) {
-      FrequencyDetection();
-    }
+    //if(stuffyCount == 2 && archPassed == false) {
+    //  frequencyDetection();
+    //}
 
     // 1st Zipline Bin Lifting Stage 
-    if(archPassed == true) {
-      zipline1();
-    }
+    //if(archPassed == true) {
+    //  zipline1();
+    //}
+
+    // Stuffy Rescue 
     
     
   }
@@ -158,48 +238,56 @@ void initialScreen() {
  * Purpose: place the first bridge 
  */
 void placeBridge1() {
-  int bridgeServoPin = 3;
-  int initialAngle = 0;
-  int finalAngle = 45;
   int backupSpeed = -120;
 
-  // back up for a short distance to drop the bridge
-  motor.speed(motorLeft, backupSpeed);
-  motor.speed(motorRight, backupSpeed);
+  // For servo mounted on the left side of the robot 
+  int finalAngle = 45;
 
-  delay(400);
+  /* For servo mounted on the right side of the robot
+     int finalAngle = 135;
+   */
+
+  // back up for a short distance to drop the bridge
+  //motor.speed(motorLeft, backupSpeed);
+  //motor.speed(motorRight, backupSpeed);
+
+  //delay(400);
+  LCD.print("stopping");
   motor.stop_all();
   delay(250);
-  
-  // drop the first bridge
-  analogWrite(bridgeServoPin, finalAngle);
-  delay(1000);
 
+  
+
+  LCD.print("servo");
+  // drop the first bridge
+  //analogWrite(bridgeServoPin, finalAngle);
+  RCServo0.write(finalAngle);
+  delay(3000);
+
+  // back up a little bit to drop the bridge
+  motor.speed(motorLeft, backupSpeed);
+  motor.speed(motorRight, backupSpeed);
+  delay(1500);
+  RCServo0.write(0);
+  delay(1500);
+
+  
+  LCD.print("back it up");
   // back up for a short distance to completely lay down the bridge
   motor.speed(motorLeft, backupSpeed);
   motor.speed(motorRight, backupSpeed);
-  delay(300);
-  motor.stop_all();
+  delay(1000);
 
   // move forward and start tape following as soon as the tape is detected
   motor.speed(motorLeft, -backupSpeed);
   motor.speed(motorRight, -backupSpeed);
-  delay(1000);
-}
-
-/*
- * Purpose: correct the orientation of the robot after crossing the first bridge to relocate the tape
- */
-void afterBridge1Correction() {
-  pid.tapeFollow();
+  delay(2000);
 }
 
 /*
  * Purpose: check the frequency of the IR beacon and respond accordingly
  */
-
- 
-void FrequencyDetection() {
+void frequencyDetection() {
   int tenkHzPin;
   int tenkHzThresh;
   int onekHzPin;
@@ -222,6 +310,7 @@ void FrequencyDetection() {
     pid.tapeFollow();
   }
 }
+
 
 /*
  * Purpose: program that controls the movement of the robot between the archway and the first zipline
@@ -319,4 +408,159 @@ void zipline1() {
           break;
     }
   }
+}
+
+
+
+
+/*
+ * Purpose: place the second bridge
+ */
+void placeBridge2() {
+  int backupSpeed = -120;
+
+  // For servo mounted on the left side of the robot 
+  int finalAngle = 135;
+
+  /* For servo mounted on the right side of the robot
+     int finalAngle = 45;
+   */
+
+
+  // back up for a short distance to drop the bridge
+  motor.speed(motorLeft, backupSpeed);
+  motor.speed(motorRight, backupSpeed);
+
+  delay(400);
+  motor.stop_all();
+  delay(250);
+  
+  // drop the second bridge
+  analogWrite(bridgeServoPin, finalAngle);
+  delay(1000);
+
+  // back up for a short distance to completely lay down the bridge
+  motor.speed(motorLeft, backupSpeed);
+  motor.speed(motorRight, backupSpeed);
+  delay(300);
+  motor.stop_all();
+
+  // move forward and start tape following as soon as the tape is detected
+  motor.speed(motorLeft, -backupSpeed);
+  motor.speed(motorRight, -backupSpeed);
+  delay(1000);
+}
+
+/*
+ * Purpose: Red the IR sensor and respond accordingly 
+ */
+void stuffyRescue() {
+    start_time = millis();
+    current_time = millis();
+    digitalWrite(pulseLeft, HIGH);
+    digitalWrite(pulseRight, HIGH);
+    int average_reading_high_left = 0;
+    int average_reading_high_right = 0;
+    int average_reading_low_left = 0;
+    int average_reading_low_right = 0;
+    int count = 0;
+    // 
+    while (current_time < 50 + start_time) {
+      current_time = millis();
+      readingHighLeft = analogRead(sensorLeft);
+      readingHighRight = analogRead(sensorRight);
+      average_reading_high_left += readingHighLeft;
+      average_reading_high_right += readingHighRight;
+      count++;
+    }
+
+    average_reading_high_left /= count;
+    average_reading_high_right /= count;
+    count = 0;
+    
+    digitalWrite(pulseLeft, LOW);
+    digitalWrite(pulseRight, LOW);
+    
+    while (current_time < 100 + start_time) {
+      current_time = millis();
+      readingLowLeft = analogRead(sensorLeft);
+      readingLowRight = analogRead(sensorRight);
+      average_reading_low_left += readingLowLeft;
+      average_reading_low_right += readingLowRight;
+      count++;
+    }  
+
+    average_reading_low_left /= count;
+    average_reading_low_right /= count;
+    count = 0;
+    
+    //Serial.println(readingHigh + String(" ") + readingLow + String(" ") + (readingHigh - readingLow));
+    
+    // Stuffy detected on left side 
+    if (average_reading_high_left - average_reading_low_left > threshold) {
+      delay(600); // add delay before stopping (sending HIGH to the TINAH)
+      digitalWrite(stuffyComPin, HIGH);
+      Serial.println("detected");
+      armLeft.write(20); // change this after testing
+      /*
+        while (current_time < 400 + start_time) {
+        current_time = millis();
+        }
+      */
+      delay(2000);
+      clawLeft.write(clawAngle + 28);
+      delay(1000);
+      /*
+        while (true) {
+        if (digitalRead(switchPin) == 0) {
+          Serial.println("captured");
+          break;
+        }
+        }
+      */
+      armLeft.write(200);
+      /*while (current_time < 1000 + start_time) {
+        current_time = millis();
+        }*/
+      delay(2000);
+      clawLeft.write(clawAngle);
+      delay(500);
+      armLeft.write(armAngle);
+      delay(1000);
+      digitalWrite(stuffyComPin, LOW);
+    }
+
+    // Stuffy detected on right side 
+    else if (average_reading_high_right - average_reading_low_right > threshold) {
+      delay(600); // add delay before stopping (sending HIGH to the TINAH)
+      digitalWrite(stuffyComPin, HIGH);
+      Serial.println("detected");
+      armRight.write(20); // change this after testing
+      /*
+        while (current_time < 400 + start_time) {
+        current_time = millis();
+        }
+      */
+      delay(2000);
+      clawRight.write(clawAngle + 28);
+      delay(1000);
+      /*
+        while (true) {
+        if (digitalRead(switchPin) == 0) {
+          Serial.println("captured");
+          break;
+        }
+        }
+      */
+      armRight.write(200);
+      /*while (current_time < 1000 + start_time) {
+        current_time = millis();
+        }*/
+      delay(2000);
+      clawRight.write(clawAngle);
+      delay(500);
+      armRight.write(armAngle);
+      delay(1000);
+      digitalWrite(stuffyComPin, LOW);
+    }
 }
