@@ -1,0 +1,9 @@
+Zipline           KEYWORD1
+setDefaultSpeed   KEYWORD2
+setMinAngle       KEYWORD2
+setMaxAngle       KEYWORD2
+setBin1Angle      KEYWORD2
+setBin2Angle      KEYWORD2
+binLower          KEYWORD2
+binLift1          KEYWORD2 
+binLift2          KEYWORD2
