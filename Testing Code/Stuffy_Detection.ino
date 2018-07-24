@@ -2,6 +2,7 @@
 // pins
 
 constexpr int stuffyComPin = 12;
+constexpr int count_limit = 2;
 
 int pulseLeft = 7;
 int pulseRight = 8;
@@ -47,27 +48,27 @@ void loop() {
   digitalWrite(stuffyComPin, LOW);
   clawLeft.write(clawAngle);
   armLeft.write(armAngle);
-  clawRight.write(clawAngle);
-  armRight.write(armAngle);
+  clawRight.write(24);
+  armRight.write(200 - armAngle);
   delay(1000);
   while (true) {
     start_time = millis();
     current_time = millis();
     digitalWrite(pulseLeft, HIGH);
     digitalWrite(pulseRight, HIGH);
-    while (current_time < 50 + start_time) {
+    while (current_time < 5 + start_time) {
       current_time = millis();
       readingHighLeft = analogRead(sensorLeft);
       readingHighRight = analogRead(sensorRight);
     }
     digitalWrite(pulseLeft, LOW);
     digitalWrite(pulseRight, LOW);
-    while (current_time < 100 + start_time) {
+    while (current_time < 10 + start_time) {
       current_time = millis();
       readingLowLeft = analogRead(sensorLeft);
       readingLowRight = analogRead(sensorRight);
     }
-    //Serial.println(readingHigh + String(" ") + readingLow + String(" ") + (readingHigh - readingLow));
+    Serial.println(readingHighRight + String(" ") + readingLowRight + String(" ") + (readingHighRight - readingLowRight));
     if (readingHighLeft - readingLowLeft > threshold) {
       countLeft++;
     }
@@ -80,11 +81,11 @@ void loop() {
     else {
       countRight = 0;
     }
-    if ( countLeft > 3 ) {
+    if ( countLeft == count_limit ) {
       leftDetection();
       countLeft = 0;
     }
-    if ( countRight > 3 ) {
+    if ( countRight == count_limit ) {
       rightDetection();
       countRight = 0;
     }
@@ -92,8 +93,8 @@ void loop() {
 }
 
 void leftDetection() {
-  delay(600); // add delay before stopping (sending HIGH to the TINAH)
   digitalWrite(stuffyComPin, HIGH);
+  delay(600); // add delay before stopping (sending HIGH to the TINAH)
   Serial.println("detected");
   armLeft.write(20); // change this after testing
   /*
@@ -126,17 +127,17 @@ void leftDetection() {
 
 
 void rightDetection() {
-  delay(600); // add delay before stopping (sending HIGH to the TINAH)
   digitalWrite(stuffyComPin, HIGH);
+  delay(600); // add delay before stopping (sending HIGH to the TINAH)
   Serial.println("detected");
-  armRight.write(20); // change this after testing
+  armRight.write(200); // change this after testing
   /*
     while (current_time < 400 + start_time) {
     current_time = millis();
     }
   */
   delay(2000);
-  clawRight.write(clawAngle + 28);
+  clawRight.write(clawAngle);
   delay(1000);
   /*
     while (true) {
@@ -146,14 +147,14 @@ void rightDetection() {
     }
     }
   */
-  armRight.write(200);
+  armRight.write(20);
   /*while (current_time < 1000 + start_time) {
     current_time = millis();
     }*/
   delay(2000);
-  clawRight.write(clawAngle);
+  clawRight.write(24);
   delay(500);
-  armRight.write(armAngle);
+  armRight.write(200 - armAngle);
   delay(1000);
   digitalWrite(stuffyComPin, LOW);
 }
