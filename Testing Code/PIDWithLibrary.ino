@@ -24,11 +24,18 @@ MenuItem rDark = MenuItem("a_rightDark", (unsigned int*)17);
 MenuItem motor_speed = MenuItem("m_speeeeed", (unsigned int*)21);
 MenuItem percent = MenuItem("p_percentage", (unsigned int*)25);
 MenuItem edgeThresh = MenuItem("edgeThresh", (unsigned int*)29);
-MenuItem menu[] = {kp, kd, gainz, lDark, rDark, motor_speed, percent, edgeThresh};
+MenuItem stuffy_delay = MenuItem("_stuffyDelay", (unsigned int*)33);
+MenuItem backoff = MenuItem("a_backupOffset", (unsigned int*) 37);
+MenuItem foroff = MenuItem("a_forOffset", (unsigned int*) 41);
+MenuItem backupdel = MenuItem("backupDelay", (unsigned int*) 45);
+MenuItem forwarddel = MenuItem("forwardDel", (unsigned int*) 49);
+MenuItem menu[] = {kp, kd, gainz, lDark, rDark, motor_speed, percent, edgeThresh, stuffy_delay, backoff, foroff, backupdel, forwarddel};
 
 char analog_sensors = 'a';
 char servos = 's';
 char PID_constants = 'p';
+
+int highCount = 0;
 
 void setup() {
 #include <phys253setup.txt>
@@ -37,10 +44,14 @@ void setup() {
 
 void loop() {
 
+  highCount = 0;
   while ( !startbutton() ) {
     initialScreen();
   }
+
   delay(500);
+  RCServo0.write(180);
+  RCServo0.write(180);
 
   while (!startbutton()) {
     menuToggle();
@@ -56,6 +67,7 @@ void loop() {
   pid.setRatio( percent.getValue() );
   pid.setEdgeThresh( edgeThresh.getValue() );
   pid.initialize();
+  int stuffyDelay = stuffy_delay.getValue();
 
   LCD.clear(); LCD.home();
   LCD.print("REEEEEEEEEE");
@@ -64,11 +76,10 @@ void loop() {
 
   while (!(stopbutton()) && !(startbutton())) {
     pid.tapeFollow();
-    
-    if ( digitalRead(stuffyComPin) == HIGH ) {
-      LCD.clear(); LCD.home();
-      LCD.print("CAUGHT");
-      delay(50);
+
+    if ( digitalRead(stuffyComPin) == HIGH && highCount != 2 ) {
+      delay(stuffyDelay);
+      highCount++;
       motor.stop_all();
       while ( digitalRead(stuffyComPin) == HIGH ) {
         LCD.clear(); LCD.home();
@@ -80,9 +91,12 @@ void loop() {
       delay(50);
       LCD.clear(); LCD.home();
     }
-    if(pid.isEdge()){
-      motor.stop_all();
-      break;
+    else if ( digitalRead(stuffyComPin) == HIGH && highCount == 2) {
+      // lift();
+      pid.tapeFollow();
+    }
+    if (pid.isEdge()) {
+      placeBridge1();
     }
   }
 
@@ -133,5 +147,61 @@ void initialScreen() {
   LCD.setCursor(0, 1);
   LCD.print("for REEEEEEEEE");
   delay(50);
+}
+
+/*
+   Purpose: place the first bridge
+*/
+void placeBridge1() {
+  int backupSpeed = -120;
+  int backupOffset = backoff.getValue();
+  int forwardOffset = foroff.getValue();
+
+  // For servo mounted on the left side of the robot
+  int finalAngle = 120;
+
+  /* For servo mounted on the right side of the robot
+     int finalAngle = 135;
+  */
+
+  //back up for a short distance to drop the bridge
+  motor.speed(motorLeft, backupSpeed);
+  motor.speed(motorRight, backupSpeed);
+
+  delay(50);
+  LCD.clear(); LCD.home();
+  LCD.print("stopping");
+  motor.stop_all();
+  delay(250);
+
+
+  LCD.clear(); LCD.home();
+  LCD.print("servo");
+  // drop the first bridge
+  //analogWrite(bridgeServoPin, finalAngle);
+
+  // back up a little bit to drop the bridge
+  motor.speed(motorLeft, backupSpeed);
+  motor.speed(motorRight, backupSpeed);
+  delay(backupdel.getValue());
+  motor.stop_all();
+  RCServo0.write(finalAngle);
+  RCServo0.write(finalAngle);
+  delay(1500);
+
+  LCD.clear(); LCD.home();
+  LCD.print("back it up");
+  // back up for a short distance to completely lay down the bridge
+  motor.speed(motorLeft, backupSpeed - backupOffset);
+  motor.speed(motorRight, backupSpeed);
+  delay(700);
+
+  // move forward and start tape following as soon as the tape is detected
+  motor.speed(motorLeft, -backupSpeed + forwardOffset);
+  motor.speed(motorRight, -backupSpeed);
+  delay((int)(forwarddel.getValue() * 2.5));
+  motor.speed(motorLeft, -backupSpeed - 100);
+  motor.speed(motorRight, -backupSpeed + 50);
+  delay(1300);
 }
 
