@@ -149,12 +149,14 @@ void rightDetection() {
     delay(1000);
     stuffyCount++;
     digitalWrite(stuffyComPin, LOW);
+    if (stuffyCount == 2) {
+      freq.detectFrequency();
+    }
   }
-  else if (stuffyCount == 3) {
+  else if (stuffyCount == 2) {
     digitalWrite(stuffyComPin, HIGH);
     delay(20);
     digitalWrite(stuffyComPin, LOW);
-    freq.detectFrequency();
   }
 }
 
