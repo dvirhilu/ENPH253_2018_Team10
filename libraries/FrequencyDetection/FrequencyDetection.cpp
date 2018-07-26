@@ -46,7 +46,7 @@ void FrequencyDetection::handle1kHz() {
   digitalWrite(tinahComPin, LOW );
 }
 
-void FrequencyDetection::detectFreqency() {
+void FrequencyDetection::detectFrequency() {
   while (true) {
     if ( is1kHz() ) {
       handle1kHz();
