@@ -1,9 +1,13 @@
 #include <Servo.h>
+#include <FrequencyDetection.h>
+
 // pins
 
 constexpr int stuffyComPin = 12;
 constexpr int count_limit = 2;
 constexpr int edgeComPin = 13;
+constexpr int tenkHzPin = 2;
+constexpr int onekHzPin = 3;
 
 int pulseLeft = 7;
 int pulseRight = 8;
@@ -18,6 +22,8 @@ int armPinRight = 6;
 int threshold = 150; // IR reading threshold
 int clawAngle = 0; // servo starting angle (open position)
 int armAngle = 150; // arm servo starting anlge (lifted position)
+int onekHzThresh = 50; // change this after testing
+int tenkHzThresh = 50; // change this after testing
 // initialize variables
 int start_time = 0;
 int current_time = 0;
@@ -32,6 +38,7 @@ Servo clawLeft;
 Servo armLeft;
 Servo clawRight;
 Servo armRight;
+FrequencyDetection freq = FrequencyDetection(tenkHzPin, onekHzPin, stuffyComPin);
 
 void setup() {
   Serial.begin(9600);
@@ -41,6 +48,8 @@ void setup() {
   pinMode(sensorRight, INPUT);
   pinMode(stuffyComPin, OUTPUT);
   pinMode(edgeComPin, INPUT);
+  pinMode(tenkHzPin, INPUT);
+  pinMode(onekHzPin, INPUT);
   clawLeft.attach(clawPinLeft);
   armLeft.attach(armPinLeft);
   clawRight.attach(clawPinRight);
@@ -54,6 +63,8 @@ void loop() {
   clawRight.write(25);
   armRight.write(200 - armAngle);
   delay(1000);
+  freq.set1kHzThresh(onekHzThresh);
+  freq.set10kHzThresh(tenkHzThresh);
   while (true) {
     start_time = millis();
     current_time = millis();
@@ -121,7 +132,6 @@ void leftDetection() {
   digitalWrite(stuffyComPin, LOW);
 }
 
-
 void rightDetection() {
   if (stuffyCount < 2) {
     digitalWrite(stuffyComPin, HIGH);
@@ -144,6 +154,7 @@ void rightDetection() {
     digitalWrite(stuffyComPin, HIGH);
     delay(20);
     digitalWrite(stuffyComPin, LOW);
+    freq.detectFrequency();
   }
 }
 
