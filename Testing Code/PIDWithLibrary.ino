@@ -12,7 +12,8 @@ constexpr int sensorRightPin = 3;
 constexpr int a_knob_thresh = 100;
 constexpr int s_knob_thresh = 270;
 constexpr int p_knob_thresh = 200;
-constexpr int stuffyComPin = 12;
+constexpr int stuffyComPin = 6;
+constexpr int edgeComPin = 13; // change this later
 
 PID pid( sensorLeftPin, sensorRightPin, motorLeft, motorRight );
 
@@ -29,13 +30,27 @@ MenuItem backoff = MenuItem("a_backupOffset", (unsigned int*) 37);
 MenuItem foroff = MenuItem("a_forOffset", (unsigned int*) 41);
 MenuItem backupdel = MenuItem("backupDelay", (unsigned int*) 45);
 MenuItem forwarddel = MenuItem("forwardDel", (unsigned int*) 49);
-MenuItem menu[] = {kp, kd, gainz, lDark, rDark, motor_speed, percent, edgeThresh, stuffy_delay, backoff, foroff, backupdel, forwarddel};
+MenuItem stuffy3del = MenuItem("stuffy3del", (unsigned int*) 53);
+MenuItem bridgeback = MenuItem( "bridgeback", (unsigned int*) 57);
+MenuItem turndel = MenuItem( "turndel", (unsigned int*) 61);
+MenuItem menu[] = {kp, kd, gainz, lDark, rDark, motor_speed, percent, edgeThresh, stuffy_delay, backoff, foroff, backupdel, forwarddel, stuffy3del, bridgeback, turndel};
 
 char analog_sensors = 'a';
 char servos = 's';
 char PID_constants = 'p';
 
 int highCount = 0;
+/* counts the number of times the Arduino send HIGH to the TINAH
+    highCount 0 & 1 = first two stuffies
+    highCount 2 = frequency detection
+    highCount 3 = arch way
+*/
+int edgeCount = 0;
+/* counts the number of edges the robot detects
+    edgeCount 1 = first brdige
+    edgeCount 2 = end of tape
+    edgeCount 3 = second bridge
+*/
 
 void setup() {
 #include <phys253setup.txt>
@@ -44,10 +59,12 @@ void setup() {
 
 void loop() {
 
-  highCount = 0;
   while ( !startbutton() ) {
     initialScreen();
   }
+  highCount = 0;
+  edgeCount = 0;
+  digitalWrite(edgeComPin, LOW);
 
   delay(500);
   RCServo0.write(180);
@@ -67,7 +84,6 @@ void loop() {
   pid.setRatio( percent.getValue() );
   pid.setEdgeThresh( edgeThresh.getValue() );
   pid.initialize();
-  int stuffyDelay = stuffy_delay.getValue();
 
   LCD.clear(); LCD.home();
   LCD.print("REEEEEEEEEE");
@@ -77,26 +93,28 @@ void loop() {
   while (!(stopbutton()) && !(startbutton())) {
     pid.tapeFollow();
 
-    if ( digitalRead(stuffyComPin) == HIGH && highCount != 2 ) {
-      delay(stuffyDelay);
-      highCount++;
-      motor.stop_all();
-      while ( digitalRead(stuffyComPin) == HIGH ) {
-        LCD.clear(); LCD.home();
-        LCD.print("INSIDE");
-        delay(50);
-      }
-      LCD.clear(); LCD.home();
-      LCD.print("OUTSIDE");
-      delay(50);
-      LCD.clear(); LCD.home();
+    if ( digitalRead(stuffyComPin) == HIGH && highCount != 3 ) {
+      arduinoStop();
     }
-    else if ( digitalRead(stuffyComPin) == HIGH && highCount == 2) {
+    else if ( digitalRead(stuffyComPin) == HIGH && highCount == 3) {
       // lift();
-      pid.tapeFollow();
+      // pid.tapeFollow();
     }
     if (pid.isEdge()) {
-      placeBridge1();
+      edgeCount++;
+      if (edgeCount == 1) {
+        placeBridge1();
+      }
+      else if (edgeCount == 2) {
+        digitalWrite(edgeComPin, HIGH);
+        edgeBackup();
+      }
+      else if (edgeCount == 3) {
+        // placeBridge2(); pseudo code for second bridge
+        while ( !stopbutton() ) {
+          motor.stop_all();
+        }
+      }
     }
   }
 
@@ -183,7 +201,7 @@ void placeBridge1() {
   // back up a little bit to drop the bridge
   motor.speed(motorLeft, backupSpeed);
   motor.speed(motorRight, backupSpeed);
-  delay(backupdel.getValue());
+  delay(bridgeback.getValue());
   motor.stop_all();
   RCServo0.write(finalAngle);
   RCServo0.write(finalAngle);
@@ -194,7 +212,7 @@ void placeBridge1() {
   // back up for a short distance to completely lay down the bridge
   motor.speed(motorLeft, backupSpeed - backupOffset);
   motor.speed(motorRight, backupSpeed);
-  delay(700);
+  delay(backupdel.getValue());
 
   // move forward and start tape following as soon as the tape is detected
   motor.speed(motorLeft, -backupSpeed + forwardOffset);
@@ -202,6 +220,44 @@ void placeBridge1() {
   delay((int)(forwarddel.getValue() * 2.5));
   motor.speed(motorLeft, -backupSpeed - 100);
   motor.speed(motorRight, -backupSpeed + 50);
-  delay(1300);
+  delay(turndel.getValue() * 2);
+}
+
+void edgeBackup() {
+
+  int backupSpeed = -100;
+  int forwardDelay = stuffy3del.getValue();
+
+  motor.stop_all();
+
+  while ( digitalRead(stuffyComPin) == LOW ) {
+    motor.speed( motorLeft, backupSpeed);
+    motor.speed( motorRight, backupSpeed);
+  }
+
+  motor.stop_all();
+
+  motor.speed( motorLeft, -backupSpeed);
+  motor.speed( motorRight, -backupSpeed);
+  delay( forwardDelay );
+  motor.stop_all();
+  while ( digitalRead(stuffyComPin) == HIGH) {}
+
+}
+
+void arduinoStop() {
+  int stuffyDelay = stuffy_delay.getValue();
+  delay(stuffyDelay);
+  highCount++;
+  motor.stop_all();
+  while ( digitalRead(stuffyComPin) == HIGH ) {
+    LCD.clear(); LCD.home();
+    LCD.print("INSIDE");
+    delay(50);
+  }
+  LCD.clear(); LCD.home();
+  LCD.print("OUTSIDE");
+  delay(50);
+  LCD.clear(); LCD.home();
 }
 
