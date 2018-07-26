@@ -8,19 +8,21 @@ Zipline::Zipline( int potPin, int echoPin, int trigPin, int liftMotorPin ) {
     pinTrig = trigPin;
     pinLiftMotor = liftMotorPin;
     // angle positions
-    initialAngle = 90;
+    initialAngle = 60;
     minAngle = 0;
     maxAngle = 270;
-    bin1Angle = initialAngle + 45;
+    bin1Angle = initialAngle + 70;
+    
     bin2Angle = initialAngle + 90;
     // initial readings
     potReading = 0;
     angle = 0;
-    motorSpeed = 100;
+    raisingMotorSpeed = 254;
+    loweringMotorSpeed = 75;
 }
 
 void Zipline::setDefaultSpeed(int speed) {
-    motorSpeed = speed;
+    raisingMotorSpeed = speed;
 }
 
 void Zipline::setMinAngle(int min) {
@@ -44,7 +46,7 @@ void Zipline::binLift1() {
     angle = (potReading / 1000.0) * maxAngle;
     
     while(angle < bin1Angle) {
-        motor.speed(pinLiftMotor, motorSpeed);
+        motor.speed(pinLiftMotor, raisingMotorSpeed);
         potReading = analogRead(pinPot);
         angle = (potReading / 1000.0) * maxAngle;
         
@@ -64,7 +66,7 @@ void Zipline::binLift2() {
     angle = (potReading / 1000.0) * maxAngle;
     
     while(angle < bin2Angle) {
-        motor.speed(pinLiftMotor, motorSpeed);
+        motor.speed(pinLiftMotor, raisingMotorSpeed);
         potReading = analogRead(pinPot);
         angle = (potReading / 1000.0) * maxAngle;
         
@@ -85,7 +87,7 @@ void Zipline::binLower() {
     angle = (potReading / 1000.0) * maxAngle;
     
     while(angle > initialAngle) {
-        motor.speed(pinLiftMotor, -motorSpeed);
+        motor.speed(pinLiftMotor, -loweringMotorSpeed);
         potReading = analogRead(pinPot);
         angle = (potReading / 1000.0) * maxAngle;
         
