@@ -33,7 +33,8 @@ class Zipline
     int bin2Angle;
     double potReading;
     int angle;
-    int motorSpeed;
+    int raisingMotorSpeed;
+    int loweringMotorSpeed;
 
 };
 
