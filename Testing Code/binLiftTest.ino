@@ -9,6 +9,7 @@ int lower_speed = 75;
 int currentPos = 0;
 int bin1HeightClicks = 105;
 int bin2HeightClicks = 80;
+int hold_delay_millisecond = 4000;
 
 BinLift binlift(lift_motor_pin);
 
@@ -79,7 +80,7 @@ void loop() {
   // continue driving forward for a while till the zipline has passed 
   start_time = millis();
   current_time = millis() - start_time;
-  while(current_time < 4000){
+  while(current_time < hold_delay_millisecond){
     pid.tapeFollow();
     current_time = millis() - start_time;
   }
@@ -88,6 +89,7 @@ void loop() {
 
   while(encoderPos - currentPos < bin1HeightClicks) {
     binlift.binLower();
+    pid.tapeFollow();
     //Serial.print("Lower:");
     //Serial.println(encoderPos, DEC);
   }
