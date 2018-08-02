@@ -61,17 +61,16 @@ void setup() {
   pinMode(encoderPinA, INPUT);
   digitalWrite(encoderPinA, HIGH);
   binlift.setDefaultSpeed(lift_speed, lower_speed);
-  
-  Serial.begin(9600);
+  //Serial.begin(9600);
 }
 
 void loop() {
-  Serial.print("Index:");
-  Serial.println(encoderPos, DEC);
+  //Serial.print("Index:");
+  //Serial.println(encoderPos, DEC);
   currentPos = encoderPos;
   while(encoderPos - currentPos < bin1HeightClicks) {
-    Serial.print("Raise:");
-    Serial.println(encoderPos, DEC);
+    //Serial.print("Raise:");
+    //Serial.println(encoderPos, DEC);
     binlift.binLift();
   }
   
@@ -89,6 +88,8 @@ void loop() {
 
   while(encoderPos - currentPos < bin1HeightClicks) {
     binlift.binLower();
+    //Serial.print("Lower:");
+    //Serial.println(encoderPos, DEC);
   }
   
   motor.speed(lift_motor_pin, 0);
@@ -96,4 +97,5 @@ void loop() {
   currentPos = encoderPos;
  
 }
+
 
