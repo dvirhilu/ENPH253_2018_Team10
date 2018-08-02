@@ -1,27 +1,25 @@
-/*
-  BinLift.h - Library for bin lifting
-*/
-
 #ifndef BinLift_h
 #define BinLift_h
 
 #include "Arduino.h"
-#include "BinState.h"
-#include "NewPing.h"
+#include "phys253.h"
+#include "LiquidCrystal.h"
 
 class BinLift
 {
   public:
-    BinLift(int motor,int sonar, int thresh, int encoder);
-    void raise();
-	void lower();
-	void poll();
+    BinLift(int liftMotorPin);
+    
+    void setDefaultSpeed(int lift_speed, int lower_speed);
+
+    void binLift();
+    void binLower();
+    
   private:
-    int motorPin;
-	int sonarPin;
-	int encoderPin;
-	int sonarThresh;
-	BinState state;
+    int pinLiftMotor;
+    int raisingMotorSpeed;
+    int loweringMotorSpeed;
+
 };
 
 #endif
