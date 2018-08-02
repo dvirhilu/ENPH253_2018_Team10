@@ -1,30 +1,26 @@
 #include "Arduino.h"
 #include "BinLift.h"
-#include "NewPing.h"
 
-BinLift::BinLift(int motor,int sonar, int thresh, int encoder){
-	motorPin = motor;
-	sonarPin = sonar;
-	sonarThresh = thresh;
-	endcoderPin = encoder;
-	pinMode(encoderPin, INPUT);
-	pinMode(QRDPin, INPUT);
+BinLift::BinLift(int liftMotorPin) {
+    // pin numbers
+    pinLiftMotor = liftMotorPin;
+    
+    // initial readings
+    raisingMotorSpeed = 254;
+    loweringMotorSpeed = 75;
 }
 
- void BinLift::raise() {
-	
-return;
+void BinLift::setDefaultSpeed(int lift_speed, int lower_speed) {
+    raisingMotorSpeed = lift_speed;
+    loweringMotorSpeed = lower_speed;
+    
 }
 
-void BinLift::lower() {
-	
-return;
+void BinLift::binLift() {
+    motor.speed(pinLiftMotor, raisingMotorSpeed);
 }
 
-void BinLift::poll(){
-	if(digitalRead(sonarPin) > sonarThresh){
-		state = BinState::detected;
-	}
-return;
+void BinLift::binLower() {
+    motor.speed(pinLiftMotor, loweringMotorSpeed);
 }
 
