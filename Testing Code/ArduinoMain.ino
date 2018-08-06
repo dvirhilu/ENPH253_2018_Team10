@@ -5,7 +5,7 @@
 // pins
 constexpr int stuffyComPin = 4;
 constexpr int count_limit = 2;
-constexpr int edgeComPin = 3;
+constexpr int edgeComPin = 12;
 constexpr int tenkHzPin = 3;
 constexpr int onekHzPin = 2;
 constexpr int pulseLeft = 7;

@@ -415,19 +415,15 @@ bool debounceStuffyPin() {
 }
 
 void doYouEvenLiftBro() {
-
   motor.speed(motorLift, -upSpeed.getValue());
   liftNTicks(lift1.getValue());
   motor.speed(motorLift, 0);
-
 }
 
 void doYouEvenLowerBro() {
-
   motor.speed(motorLift, downSpeed.getValue());
   liftNTicks(lower1.getValue());
   motor.speed(motorLift, 0);
-
 }
 
 
