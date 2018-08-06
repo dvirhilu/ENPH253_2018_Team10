@@ -16,6 +16,8 @@ class Stuffy
     bool senseRight();
     void rightPickup();
 	void leftPickup();
+	bool singleSenseLeft();
+	void comeDownSlightly();
   private:
     Servo clawLeft;
     Servo armLeft;

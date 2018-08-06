@@ -28,9 +28,9 @@ clawLeft.attach(clawL);
   countRight = 0;
   threshold = 0;
   digitalWrite(stuffyComPin, LOW);
-  clawLeft.write(clawAngle);
+  clawLeft.write(28);
   armLeft.write(armAngle);
-  clawRight.write(25);
+  clawRight.write(30);
   armRight.write(200 - armAngle);
   delay(1000);
 }
@@ -42,8 +42,8 @@ void Stuffy::setSensorThresh( int thresh ) {
 
 bool Stuffy::senseLeft() {
 	
-  int start_time = millis();
-  int current_time = millis();
+  long start_time = millis();
+  long current_time = millis();
   int readingHighLeft;
   int readingLowLeft;
   
@@ -57,6 +57,9 @@ bool Stuffy::senseLeft() {
     current_time = millis();
     readingLowLeft = analogRead(sensorLeft);
   }
+  
+  //Serial.println(readingHighLeft - readingLowLeft);
+  
   if (readingHighLeft - readingLowLeft > threshold) {
     countLeft++;
   }
@@ -71,8 +74,8 @@ bool Stuffy::senseLeft() {
 }
 
 bool Stuffy::senseRight() {
-  int start_time = millis();
-  int current_time = millis();
+  long start_time = millis();
+  long current_time = millis();
   int readingHighRight;
   int readingLowRight;
   
@@ -80,12 +83,16 @@ bool Stuffy::senseRight() {
   while (current_time < 5 + start_time) {
     current_time = millis();
     readingHighRight = analogRead(sensorRight);
+	//Serial.print("high");
   }
   digitalWrite(pulseRight, LOW);
   while (current_time < 10 + start_time) {
     current_time = millis();
     readingLowRight = analogRead(sensorRight);
+	//Serial.println("low");
   }
+  
+  //Serial.println( readingHighRight - readingLowRight );
   if (readingHighRight - readingLowRight > threshold) {
     countRight++;
   }
@@ -101,19 +108,20 @@ bool Stuffy::senseRight() {
 
 void Stuffy::rightPickup() {
   digitalWrite(stuffyComPin, HIGH);
-  delay(600); // add delay before stopping (sending HIGH to the TINAH)
+  delay(500); // add delay before stopping (sending HIGH to the TINAH)
   Serial.println("detected");
-  armRight.write(195); // change this after testing
-  delay(2000);
-  clawRight.write(clawAngle);
+  armRight.write(200); // change this after testing
+  delay(100);
+  clawRight.write(50);
+  delay(400);
+  clawRight.write(7);
+  delay(300);
+  armRight.write(20);
   delay(1000);
-  armRight.write(30);
-  delay(2000);
-  clawRight.write(25);
-  delay(500);
-  armRight.write(200 - armAngle);
-  delay(1000);
+  clawRight.write(30);
   digitalWrite(stuffyComPin, LOW);
+  delay(200);
+  armRight.write(200 - armAngle);
 }
 
 void Stuffy::leftPickup() {
@@ -121,15 +129,21 @@ void Stuffy::leftPickup() {
   delay(600); // add delay before stopping (sending HIGH to the TINAH)
   Serial.println("detected");
   armLeft.write(20); // change this after testing
-  delay(2000);
-  clawLeft.write(clawAngle + 28);
+  delay(100);
+  clawLeft.write(7);
+  delay(800);
+  clawLeft.write(54);
   delay(1000);
   armLeft.write(190);
-  delay(2000);
-  clawLeft.write(clawAngle);
+  delay(1000);
+  clawLeft.write(28);
   delay(500);
   armLeft.write(armAngle);
   delay(1000);
   digitalWrite(stuffyComPin, LOW);
+}
+
+void Stuffy::comeDownSlightly(){
+	armLeft.write(100);
 }
 
