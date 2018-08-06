@@ -1,6 +1,5 @@
 FrequencyDetection	KEYWORD1
-set10kHzThresh
-	KEYWORD2
+set10kHzThresh	KEYWORD2
 set1kHzThresh	KEYWORD2
 is10kHz	KEYWORD2
 is1kHz	KEYWORD2
