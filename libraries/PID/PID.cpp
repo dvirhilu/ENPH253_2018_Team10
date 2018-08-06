@@ -82,11 +82,11 @@ void PID::setEdgeThresh( int thresh ){
   error = 0;
 }
 
-LCD.clear();
-  LCD.setCursor(0, 0);
-  LCD.print((int)sensorLeft + String(" ") + (int)sensorRight + String(" ") + error + String(" ") + derivative);
+	//LCD.clear();
+  //LCD.setCursor(0, 0);
+  //LCD.print((int)sensorLeft + String(" ") + (int)sensorRight + String(" ") + error + String(" ") + derivative);
 
-  LCD.setCursor(0, 1);
+  //LCD.setCursor(0, 1);
   derivative = (error - prev_error) / (current_time - prev_time);
 
   pid = gain * (k_p / 10.0 * error + k_d / 10.0 * derivative);
@@ -104,15 +104,15 @@ LCD.clear();
   if ( pid < 0 ) {
   motor.speed(motorLeft, default_speed - (ratio/100.0) * pid);
   motor.speed(motorRight, default_speed + (1-ratio/100.0) * pid);
-  LCD.print((default_speed - (ratio/100.0)*pid) + String(" ") + default_speed + (1-ratio/100.0)*pid);
+  //LCD.print((default_speed - (ratio/100.0)*pid) + String(" ") + default_speed + (1-ratio/100.0)*pid);
 
 }
   else {
   motor.speed(motorLeft, default_speed - (1-ratio/100.0) * pid);
   motor.speed(motorRight, default_speed + (ratio/100.0) * pid);
-  LCD.print((default_speed - (1-ratio/100.0)*pid) + String(" ") + (default_speed + (ratio/100.0)*pid));
+  //LCD.print((default_speed - (1-ratio/100.0)*pid) + String(" ") + (default_speed + (ratio/100.0)*pid));
 }
-  delay(30);
+  //delay(30);
 }
 
 bool PID::isEdge() {
