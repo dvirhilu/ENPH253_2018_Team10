@@ -116,7 +116,7 @@ void Stuffy::rightPickup() {
   delay(400);
   clawRight.write(7);
   delay(300);
-  armRight.write(20);
+  armRight.write(10);
   delay(1000);
   clawRight.write(30);
   digitalWrite(stuffyComPin, LOW);
@@ -134,7 +134,7 @@ void Stuffy::leftPickup() {
   delay(800);
   clawLeft.write(54);
   delay(1000);
-  armLeft.write(190);
+  armLeft.write(200);
   delay(1000);
   clawLeft.write(28);
   delay(500);
