@@ -128,15 +128,15 @@ void Stuffy::leftPickup() {
   digitalWrite(stuffyComPin, HIGH);
   delay(600); // add delay before stopping (sending HIGH to the TINAH)
   Serial.println("detected");
-  armLeft.write(20); // change this after testing
+  armLeft.write(10); // change this after testing
   delay(100);
   clawLeft.write(7);
   delay(800);
-  clawLeft.write(54);
+  clawLeft.write(50);
   delay(1000);
-  armLeft.write(200);
+  armLeft.write(230);
   delay(1000);
-  clawLeft.write(28);
+  clawLeft.write(30);
   delay(500);
   armLeft.write(armAngle);
   delay(1000);
@@ -144,6 +144,6 @@ void Stuffy::leftPickup() {
 }
 
 void Stuffy::comeDownSlightly(){
-	armLeft.write(100);
+	armLeft.write(80);
 }
 
