@@ -12,6 +12,7 @@ constexpr int pulseLeft = 7;
 constexpr int pulseRight = 8;
 constexpr int sensorLeft = 0;
 constexpr int sensorRight = 1;
+
 constexpr int clawPinLeft = 9;
 constexpr int armPinLeft = 10;
 constexpr int clawPinRight = 5;
@@ -43,7 +44,7 @@ void setup() {
 
 void loop() {
   
-  if (stuffyCount < 3) {
+  if (stuffyCount < 4) {
     if (digitalRead(edgeComPin) == HIGH && freqDone == false) {
       Serial.println("I'm a freq");
       freq.detectFrequency();
@@ -58,8 +59,13 @@ void loop() {
         digitalWrite(LED_BUILTIN, LOW);
         stuffyCount++;
       }
-      else if (stuffyCount == 2) {
+      else if( stuffyCount == 2){
         Serial.println("arch");
+        stuffyCount++;
+        delay(700);
+      }
+      else if (stuffyCount == 3) {
+        Serial.println("stormTrooper");
         digitalWrite(stuffyComPin, HIGH);
         digitalWrite(LED_BUILTIN, HIGH);
         delay(100);

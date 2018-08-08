@@ -3,45 +3,51 @@
 #include<MenuItem.h>
 #include<avr/EEPROM.h>
 #include <PID.h>
-//PID values
+#include <EdgePID.h>
 
 constexpr int motorLeft = 2;
 constexpr int motorRight = 0;
 constexpr int motorLift = 1;
 constexpr int sensorLeftPin = 0;
 constexpr int sensorRightPin = 1;
+constexpr int edgeLeft = 2;
+constexpr int edgeRight = 3;
 constexpr int a_knob_thresh = 100;
 constexpr int s_knob_thresh = 270;
 constexpr int p_knob_thresh = 200;
-constexpr int stuffyComPin = 6;
+constexpr int stuffyComPin = 5;
 constexpr int comPin = 13; // change this
 constexpr int encoderLeftPin = 1;
 constexpr int encoderRightPin = 0;
+
+
 constexpr int cpr = 20;
 constexpr int gearRatio = 3;
 
 volatile long encoderLPos = 0;  // a counter for the dial
 volatile long encoderRPos = 0;  // a counter for the dial
 volatile long encoderLiftPos = 0;
+int arduinoStopCount = 0;
 
 PID pid( sensorLeftPin, sensorRightPin, motorLeft, motorRight );
+EdgePID edgePID( edgeLeft, edgeRight, motorLeft, motorRight );
 
 MenuItem kp = MenuItem("p_k_p", (unsigned int*)1);
 MenuItem kd = MenuItem("p_k_d", (unsigned int*)5);
-MenuItem gainz = MenuItem("p_gainzz", (unsigned int*)9);
+MenuItem stuffyDelayLeft = MenuItem("p_stuffdel_L", (unsigned int*)9);
 MenuItem lDark = MenuItem("a_leftDark", (unsigned int*)13);
 MenuItem rDark = MenuItem("a_rightDark", (unsigned int*)17);
 MenuItem motor_speed = MenuItem("m_speeeeed", (unsigned int*)21);
-MenuItem percent = MenuItem("p_percentage", (unsigned int*)25);
+MenuItem irspeed = MenuItem("IRSpeed", (unsigned int*)25);
 MenuItem edgeThresh = MenuItem("edgeThresh", (unsigned int*)29);
 MenuItem stuffy_delay = MenuItem("stuffyDelay", (unsigned int*)33);
 MenuItem archdel = MenuItem("p_archdel", (unsigned int*) 37);
 MenuItem foroff = MenuItem("a_forOffset", (unsigned int*) 41);
 MenuItem backupdel = MenuItem("a_backupDelay", (unsigned int*) 45);
-MenuItem forwarddel = MenuItem("forwardDel", (unsigned int*) 49);
+MenuItem forwarddel = MenuItem("p_forwardDel", (unsigned int*) 49);
 MenuItem stuffy3del = MenuItem("p_stuffy3del", (unsigned int*) 53);
 MenuItem bridgeback = MenuItem( "a_bridgeback", (unsigned int*) 57);
-MenuItem turndel = MenuItem( "turndel", (unsigned int*) 61);
+MenuItem turndel = MenuItem( "p_turndel", (unsigned int*) 61);
 MenuItem sharpTurnDel = MenuItem( "p_90degree", (unsigned int*) 65);
 MenuItem backup3 = MenuItem("p_back3", (unsigned int*) 69);
 MenuItem bridge2For = MenuItem("p_bridge2for", (unsigned int*) 73);
@@ -51,8 +57,25 @@ MenuItem downSpeed = MenuItem("s_downSpeed", (unsigned int*) 85);
 MenuItem lift1 = MenuItem("p_lift1" , (unsigned int*) 89);
 MenuItem lower1 = MenuItem("p_lower1", (unsigned int*) 93);
 MenuItem irDelay = MenuItem("p_IRDelay", (unsigned int*) 97);
+MenuItem bridge2Back = MenuItem("a_bridge2bac", (unsigned int*) 101);
+MenuItem backupdel2 = MenuItem("a_backupdel2", (unsigned int*) 105);
+MenuItem edgeKp = MenuItem("a_edgeKp", (unsigned int*) 109);
+MenuItem turn1Offset = MenuItem("a_turn1offset", (unsigned int*) 113);
+MenuItem turn2Offset = MenuItem("a_turn2offset", (unsigned int*) 117);
+MenuItem turn2del = MenuItem("p_turn2del", (unsigned int*) 121);
+MenuItem susdelay = MenuItem("_susdelay", (unsigned int*) 125);
+MenuItem lift2 = MenuItem("p_lift2", (unsigned int*) 129);
+MenuItem lower2 = MenuItem("p_lower2", (unsigned int*) 133);
+MenuItem dropdel2 = MenuItem("p_dropdel2", (unsigned int*) 137);
+MenuItem backoff = MenuItem("p_backoff", (unsigned int*) 141);
 
-MenuItem menu[] = {kp, kd, gainz, lDark, rDark, motor_speed, percent, edgeThresh, stuffy_delay, archdel, foroff, backupdel, forwarddel, stuffy3del, bridgeback, turndel, sharpTurnDel, backup3, bridge2For, dropoffdel, upSpeed, downSpeed, lift1, lower1, irDelay};
+MenuItem menu[] = {
+  kp, kd, stuffyDelayLeft, lDark, rDark, motor_speed, irspeed, edgeThresh, stuffy_delay,
+  archdel, foroff, backupdel, forwarddel, stuffy3del, bridgeback, turndel, sharpTurnDel,
+  backup3, bridge2For, dropoffdel, upSpeed, downSpeed, lift1, lower1, irDelay, bridge2Back,
+  backupdel2, edgeKp, turn1Offset, turn2Offset, turn2del, susdelay, lift2, lower2, dropdel2,
+  backoff
+};
 
 char analog_sensors = 'a';
 char servos = 's';
@@ -143,23 +166,24 @@ void loop() {
 
   pid.setKp( kp.getValue() );
   pid.setKd( kd.getValue() );
-  pid.setGain( gainz.getValue() );
+  pid.setGain( 1 );
   pid.setLeftDark( lDark.getValue() );
   pid.setRightDark( rDark.getValue() );
   pid.setDefaultSpeed( motor_speed.getValue() );
-  pid.setRatio( percent.getValue() );
+  pid.setRatio( 50 );
   pid.setEdgeThresh( edgeThresh.getValue() );
   pid.initialize();
+  edgePID.setEdgeKp( edgeKp.getValue() );
+  edgePID.setDefaultSpeed( motor_speed.getValue() );
 
   LCD.clear(); LCD.home();
   LCD.print("REEEEEEEEEE");
-  delay(4000);
 
 
   while (!stopbutton() && !startbutton()) {
     pid.tapeFollow();
 
-    if ( debounceStuffyPin() && highCount != 3 ) {
+    if ( debounceStuffyPin() && highCount < 3 ) {
       Serial.println(highCount + String("why are you here?"));
       arduinoStop();
       //digitalWrite(comPin,HIGH);
@@ -168,20 +192,25 @@ void loop() {
         digitalWrite(comPin, LOW);
         LCD.clear(); LCD.home();
         LCD.print("low");
+        pid.setDefaultSpeed( irspeed.getValue() );
       }
     }
     else if ( debounceStuffyPin() && highCount == 3) {
       Serial.println("go back you went too far");
-      tapeFollowNTicks( archdel.getValue() );
+      pid.setDefaultSpeed( motor_speed.getValue() );
       motor.stop_all();
-      doYouEvenLiftBro();
+      doYouEvenLiftBro( lift1.getValue() );
       tapeFollowNTicks( dropoffdel.getValue());
       motor.stop_all();
-      doYouEvenLowerBro();
+      doYouEvenLowerBro( lower1.getValue() );
       tapeFollowNTicks( stuffy3del.getValue());
       digitalWrite(comPin, HIGH);
       LCD.clear(); LCD.home();
       LCD.print("high");
+      highCount++;
+    }
+    else if( debounceStuffyPin() && highCount > 3){
+      arduinoLeftStop();
       highCount++;
     }
 
@@ -197,6 +226,9 @@ void loop() {
       else if (edgeCount == 2) {
         toSecondGap();
         placeBridge2();
+        suspensionBridge();
+        grandFinale();
+        break;
       }
     }
   }
@@ -212,7 +244,7 @@ void loop() {
 void menuToggle() {
   int sizeArray = sizeof(menu[0]);
   int value = knob(6);
-  int menu_item = knob(7) * (sizeof(menu) / sizeArray) / 1024;
+  int menu_item = knob(7) * (sizeof(menu) / sizeArray) / 998;
   if (menu_item > (sizeof(menu) / sizeArray) - 1) {
     menu_item = sizeof(menu) / sizeArray - 1;
   }
@@ -263,9 +295,6 @@ void placeBridge1() {
   // For servo mounted on the left side of the robot
   int finalAngle = 120;
 
-  // For servo mounted on the right side of the robot
-  // int finalAngle = 135;
-
 
   //back up for a short distance to drop the bridge
   motor.speed(motorLeft, backupSpeed);
@@ -288,39 +317,49 @@ void placeBridge1() {
   delay(1500);
 
   // back up for a short distance to completely lay down the bridge
-  motor.speed(motorLeft, backupSpeed);
+  motor.speed(motorLeft, backupSpeed - backoff.getValue());
   motor.speed(motorRight, backupSpeed);
   delayNTicks(backupdel.getValue());
 
   // move forward and start tape following as soon as the tape is detected
   motor.speed(motorLeft, -backupSpeed + forwardOffset);
   motor.speed(motorRight, -backupSpeed);
-  delay(forwarddel.getValue() * 2.5);
-  motor.speed(motorLeft, -backupSpeed - 100);
-  motor.speed(motorRight, -backupSpeed + 50);
-  delay(turndel.getValue() * 2);
+  delayNTicks(forwarddel.getValue());
+  motor.speed(motorLeft, -backupSpeed - turn1Offset.getValue());
+  motor.speed(motorRight, -backupSpeed );
+  delayNTicks(turndel.getValue());
 }
 
 void arduinoStop() {
+  arduinoStopCount++;
+  LCD.clear(); LCD.home();
+  LCD.print(arduinoStopCount);
   tapeFollowNTicks( stuffy_delay.getValue() );
   motor.stop_all();
-
   while ( digitalRead(stuffyComPin) == HIGH ) {}
+}
+
+void arduinoLeftStop(){
+  arduinoStopCount++;
+  LCD.clear(); LCD.home();
+  LCD.print(arduinoStopCount);
+  tapeFollowNTicks( stuffyDelayLeft.getValue() );
+  motor.stop_all();
+
+  while ( digitalRead(stuffyComPin) == HIGH ) {};
 }
 
 void delayNTicks( int numTicks ) {
   long startTicks = encoderRPos;
-  while ( encoderRPos - startTicks < numTicks ) {}
+  while ( encoderRPos - startTicks < numTicks ) {
+    if ( digitalRead(stuffyComPin) == HIGH ) {
+      arduinoStop();
+    }
+  }
 }
 
 void liftNTicks( int numTicks ) {
-  long startTicks = encoderLiftPos;
-  while ( encoderLiftPos - startTicks < numTicks ) {
 
-    LCD.clear(); LCD.home();
-    LCD.print(encoderLiftPos);
-    delay(10);
-  }
 }
 
 void turn90Degrees() {
@@ -349,7 +388,7 @@ void toSecondGap() {
 void placeBridge2() {
   motor.speed(motorLeft, -120);
   motor.speed(motorRight, -120);
-  delayNTicks(bridgeback.getValue());
+  delayNTicks(bridge2Back.getValue());
   motor.stop_all();
   RCServo0.write(0);
   RCServo0.write(0);
@@ -358,11 +397,15 @@ void placeBridge2() {
   // back up for a short distance to completely lay down the bridge
   motor.speed(motorLeft, -120);
   motor.speed(motorRight, -120);
-  delayNTicks(backupdel.getValue());
+  delayNTicks(backupdel2.getValue());
 
   motor.speed(motorLeft, 120);
   motor.speed(motorRight, 120);
   delayNTicks(bridge2For.getValue());
+
+  motor.speed(motorLeft, 120 + turn2Offset.getValue());
+  motor.speed(motorRight, 120 );
+  delayNTicks(turn2del.getValue());
 }
 
 void tapeFollowNTicks( int numTicks ) {
@@ -405,7 +448,7 @@ bool debounceStopButton() {
 
 bool debounceStuffyPin() {
   if ( digitalRead(stuffyComPin) == HIGH ) {
-    delay(5);
+    delay(15);
     if (digitalRead(stuffyComPin) == HIGH ) {
       return true;
     }
@@ -414,16 +457,76 @@ bool debounceStuffyPin() {
   return false;
 }
 
-void doYouEvenLiftBro() {
-  motor.speed(motorLift, -upSpeed.getValue());
-  liftNTicks(lift1.getValue());
+void doYouEvenLiftBro( int numTicks ) {
+  int speedVal = upSpeed.getValue();
+  motor.speed(motorLift, -speedVal);
+  long startTicks = encoderLiftPos;
+  while ( encoderLiftPos - startTicks < numTicks ) {
+    int startEncoderPos = encoderLiftPos;
+    double currentTime = millis();
+    while ( millis() - currentTime < 300 ) {
+      LCD.clear(); LCD.home();
+      LCD.print(encoderLiftPos - startTicks);
+      if (encoderLiftPos - startTicks >= numTicks) {
+        break;
+      }
+    }
+    if ( startEncoderPos == encoderLiftPos) {
+      speedVal += 20;
+    }
+  }
   motor.speed(motorLift, 0);
 }
 
-void doYouEvenLowerBro() {
-  motor.speed(motorLift, downSpeed.getValue());
-  liftNTicks(lower1.getValue());
+void doYouEvenLowerBro( int numTicks ) {
+  int speedVal = downSpeed.getValue();
+  long startTicks = encoderLiftPos;
+
+  while ( encoderLiftPos - startTicks < numTicks ) {
+    motor.speed(motorLift, speedVal);
+
+    int startEncoderPos = encoderLiftPos;
+    double currentTime = millis();
+
+    while ( millis() - currentTime < 300 ) {
+      LCD.clear(); LCD.home();
+      LCD.print(encoderLiftPos - startTicks);
+      if (encoderLiftPos - startTicks >= numTicks) {
+        break;
+      }
+    }
+    if ( startEncoderPos == encoderLiftPos) {
+      speedVal += 20;
+    }
+  }
   motor.speed(motorLift, 0);
+}
+
+void suspensionBridge() {
+
+  long startTicks = encoderRPos;
+  while ( encoderRPos - startTicks < susdelay.getValue() ) {
+    if (digitalRead(stuffyComPin) == HIGH) {
+      arduinoStop();
+    }
+    edgePID.edgeFollow();
+  }
+}
+
+void grandFinale() {
+  while (true) {
+    motor.speed(motorLeft, 120);
+    motor.speed(motorRight, 120);
+    if ( digitalRead(stuffyComPin) == HIGH ) {
+      arduinoStop();
+      doYouEvenLiftBro( lift2.getValue() );
+      delayNTicks( dropdel2.getValue() );
+      doYouEvenLowerBro( lower2.getValue() );
+    }
+    if ( pid.isEdge() ) {
+      break;
+    }
+  }
 }
 
 
