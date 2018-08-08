@@ -21,7 +21,7 @@ void FrequencyDetection::set1kHzThresh( int thresh ) {
 
 bool FrequencyDetection::is10kHz() {
 	Serial.print( analogRead(pin10kHz) + String(" 10K ") );
-  if ( analogRead(pin10kHz) > thresh10kHz ) {
+  if ( analogRead(pin1kHz) / analogRead(pin10kHz) < 3 ) {
     return  true;
   }
   return false;
@@ -29,7 +29,7 @@ bool FrequencyDetection::is10kHz() {
 
 bool FrequencyDetection::is1kHz() {
 	Serial.print(analogRead(pin1kHz) + String(" 1K "));
-  if ( analogRead(pin1kHz) > thresh1kHz ) {
+  if ( analogRead(pin1kHz) / analogRead(pin10kHz) >= 3 ) {
     return  true;
   }
   return false;
