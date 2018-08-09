@@ -1,0 +1,5 @@
+MenuItem	KEYWORD1
+getName	KEYWORD2
+getValue	KEYWORD2
+setValue	KEYWORD2
+getEepNum	KEYWORD2
