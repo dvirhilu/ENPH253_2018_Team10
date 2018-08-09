@@ -1,0 +1,13 @@
+PID	KEYWORD1
+setKp	KEYWORD2
+setKd	KEYWORD2
+setGain	KEYWORD2
+setLeftDark	KEYWORD2
+setRightDark	KEYWORD2
+setDefaultSpeed	KEYWORD2
+setRatio	KEYWORD2
+setEdgeThresh	KEYWORD2
+initialize	KEYWORD2
+getPID	KEYWORD2
+tapeFollow	KEYWORD2
+isEdge	KEYWORD2
