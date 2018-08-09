@@ -40,10 +40,55 @@ void setup() {
   freq.set1kHzThresh(onekHzThresh);
   freq.set10kHzThresh(tenkHzThresh);
   stuffy.setSensorThresh(threshold);
-}
+  digitalWrite(stuffyComPin, LOW);
+  }
 
 void loop() {
+
+
+  if( stuffyCount == 0 && stuffy.senseRight() && freqDone == false){
+    stuffy.rightPickup();
+    stuffyCount++;
+    Serial.println("first stuffy");
+    //first stuffy
+  }
+  else if( stuffyCount == 1 && debounceEdgeComPin() && freqDone == false){
+    freq.detectFrequency();
+    stuffyCount++;
+    freqDone == true;
+    Serial.println("IR");
+    // IR
+  }
+  else if( stuffyCount == 2 && stuffy.senseRight() ){
+    stuffy.rightPickup();
+    stuffyCount++;
+    Serial.println("second stuffy");
+    //second stuffy
+  }
+  else if( stuffyCount == 3 && stuffy.senseRight() ){
+    digitalWrite( stuffyComPin, HIGH );
+    stuffyCount++;
+    delay(500);
+    digitalWrite( stuffyComPin, LOW );
+    Serial.println("arch");
+    //archway
+  }
+  else if( stuffyCount == 4 && stuffy.senseRight() ){
+    digitalWrite( stuffyComPin, HIGH );
+    stuffyCount++;
+    delay(200);
+    digitalWrite( stuffyComPin, LOW );
+    Serial.println("storm trooper");
+    //storm trooper
+  }
+  else if( stuffyCount >= 5 && debounceEdgeComPin() && stuffy.senseLeft() ){
+    stuffy.leftPickup();
+    stuffyCount++;
+    Serial.println("left stuffy");
+    //left stuffies
+  }
   
+  /*
   if (stuffyCount < 4) {
     if (digitalRead(edgeComPin) == HIGH && freqDone == false) {
       Serial.println("I'm a freq");
@@ -66,10 +111,10 @@ void loop() {
       }
       else if (stuffyCount == 3) {
         Serial.println("stormTrooper");
-        digitalWrite(stuffyComPin, HIGH);
+        digitalWrite(stuffyComPin, LOW);
         digitalWrite(LED_BUILTIN, HIGH);
         delay(100);
-        digitalWrite(stuffyComPin, LOW);
+        digitalWrite(stuffyComPin, HIGH);
         digitalWrite(LED_BUILTIN, LOW);
         stuffyCount++;
         delay(1000);
@@ -83,5 +128,17 @@ void loop() {
       stuffy.leftPickup();
       digitalWrite(LED_BUILTIN, LOW);
     }
-  }
+  }*/
 }
+
+bool debounceEdgeComPin(){
+  if( digitalRead(edgeComPin) == HIGH ){
+    delay(10);
+    if( digitalRead(edgeComPin) == HIGH){
+      return true;
+    }
+  }
+
+  return false;
+}
+
