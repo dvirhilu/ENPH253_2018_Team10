@@ -1,0 +1,6 @@
+Stuffy	KEYWORD1
+senseLeft	KEYWORD2
+senseRight	KEYWORD2
+rightPickup	KEYWORD2
+leftPickup	KEYWORD2
+setSensorThresh	KEYWORD2
