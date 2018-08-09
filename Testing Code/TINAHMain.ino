@@ -15,7 +15,7 @@ constexpr int edgeRight = 3;
 constexpr int a_knob_thresh = 100;
 constexpr int s_knob_thresh = 270;
 constexpr int p_knob_thresh = 200;
-constexpr int stuffyComPin = 5;
+constexpr int stuffyComPin = 4;
 constexpr int comPin = 13; // change this
 constexpr int encoderLeftPin = 1;
 constexpr int encoderRightPin = 0;
@@ -93,6 +93,7 @@ int edgeCount = 0;
     edgeCount 2 = end of tape
     edgeCount 3 = second bridge
 */
+int numBridgeDropped = 0;
 
 // encoder interrupt stuff
 
@@ -134,13 +135,14 @@ void encodeLift() {
 
 void setup() {
 #include <phys253setup.txt>
-  Serial.begin(9600);
   enableExternalInterrupt(INT0, FALLING);
   enableExternalInterrupt(INT1, FALLING);
   enableExternalInterrupt(INT2, FALLING);
 
   pinMode(encoderLeftPin, INPUT);
   pinMode(encoderRightPin, INPUT);
+  pinMode(stuffyComPin, INPUT);
+  pinMode(comPin, OUTPUT);
 
 }
 
@@ -180,24 +182,49 @@ void loop() {
   LCD.print("REEEEEEEEEE");
 
 
-  while (!stopbutton() && !startbutton()) {
-    pid.tapeFollow();
-
-    if ( debounceStuffyPin() && highCount < 3 ) {
-      Serial.println(highCount + String("why are you here?"));
+  while (!stopbutton() && !startbutton() ) {
+    LCD.print( highCount + String(" ") + digitalRead(stuffyComPin) + String("above"));
+    delay(50);
+    if ( debounceStuffyPin() && highCount == 0 && numBridgeDropped == 0) {
+      LCD.clear();
+      LCD.print("stuffy 1");
       arduinoStop();
-      //digitalWrite(comPin,HIGH);
+      while ( debounceLowStuffyPin() ) {}
       highCount++;
-      if ( highCount == 2) {
-        digitalWrite(comPin, LOW);
-        LCD.clear(); LCD.home();
-        LCD.print("low");
-        pid.setDefaultSpeed( irspeed.getValue() );
-      }
     }
-    else if ( debounceStuffyPin() && highCount == 3) {
-      Serial.println("go back you went too far");
-      pid.setDefaultSpeed( motor_speed.getValue() );
+    else if (debounceStuffyPin() && highCount == 1 && numBridgeDropped == 1) {
+      LCD.clear();
+      LCD.print("IR");
+      arduinoStop();
+      while ( debounceLowStuffyPin() ) {}
+      highCount++;
+      digitalWrite(comPin, LOW);
+    }
+    else if ( debounceStuffyPin() && highCount == 2 && numBridgeDropped == 1) {
+      LCD.clear();
+      LCD.print("stuffy 2");
+      //speed up after this through the arch
+      arduinoStop();
+      while ( debounceLowStuffyPin() ) {}
+      highCount++;
+    }
+    else if ( pid.isEdge() && highCount == 1 && numBridgeDropped == 0) {
+      LCD.clear(); LCD.home();
+      LCD.print("edge");
+      placeBridge1();
+      tapeFollowNTicks( irDelay.getValue() );
+      digitalWrite(comPin, HIGH);
+      numBridgeDropped++;
+    }
+    else if ( debounceStuffyPin() && highCount == 3 && numBridgeDropped == 1) {
+      LCD.clear(); LCD.home();
+      LCD.print("arch");
+      while ( debounceLowStuffyPin() ) {}
+      highCount++;
+    }
+    else if ( debounceStuffyPin() && highCount == 4 && numBridgeDropped == 1) {
+      LCD.clear(); LCD.home();
+      LCD.print("storm trooper");
       motor.stop_all();
       doYouEvenLiftBro( lift1.getValue() );
       tapeFollowNTicks( dropoffdel.getValue());
@@ -205,34 +232,76 @@ void loop() {
       doYouEvenLowerBro( lower1.getValue() );
       tapeFollowNTicks( stuffy3del.getValue());
       digitalWrite(comPin, HIGH);
+      while ( debounceLowStuffyPin() ) {}
+      highCount++;
+    }
+    else if ( debounceStuffyPin() && highCount == 5 && numBridgeDropped == 1) {
       LCD.clear(); LCD.home();
-      LCD.print("high");
-      highCount++;
-    }
-    else if( debounceStuffyPin() && highCount > 3){
+      LCD.print("something Left");
       arduinoLeftStop();
+      while ( debounceLowStuffyPin() ) {}
       highCount++;
     }
+    LCD.clear(); LCD.home();
+    LCD.print( highCount + String(" ") + digitalRead(stuffyComPin) + String("below") + numBridgeDropped);
+    delay(50);
+    pid.tapeFollow();
+  }
 
-    if (pid.isEdge()) {
-      edgeCount++;
-      if (edgeCount == 1) {
-        placeBridge1();
-        tapeFollowNTicks( irDelay.getValue() );
+
+  /*
+    while (!stopbutton() && !startbutton()) {
+      pid.tapeFollow();
+
+      if ( debounceStuffyPin() && highCount < 3 ) {
+        Serial.println(highCount + String("why are you here?"));
+        arduinoStop();
+        //digitalWrite(comPin,HIGH);
+        highCount++;
+        if ( highCount == 2) {
+          digitalWrite(comPin, LOW);
+          LCD.clear(); LCD.home();
+          LCD.print("low");
+          pid.setDefaultSpeed( irspeed.getValue() );
+        }
+      }
+      else if ( debounceStuffyPin() && highCount == 3) {
+        Serial.println("go back you went too far");
+        pid.setDefaultSpeed( motor_speed.getValue() );
+        motor.stop_all();
+        doYouEvenLiftBro( lift1.getValue() );
+        tapeFollowNTicks( dropoffdel.getValue());
+        motor.stop_all();
+        doYouEvenLowerBro( lower1.getValue() );
+        tapeFollowNTicks( stuffy3del.getValue());
         digitalWrite(comPin, HIGH);
         LCD.clear(); LCD.home();
         LCD.print("high");
+        highCount++;
       }
-      else if (edgeCount == 2) {
-        toSecondGap();
-        placeBridge2();
-        suspensionBridge();
-        grandFinale();
-        break;
+      else if ( debounceStuffyPin() && highCount > 3) {
+        arduinoLeftStop();
+        highCount++;
       }
-    }
-  }
-  Serial.println("lol I died");
+
+      if (pid.isEdge()) {
+        edgeCount++;
+        if (edgeCount == 1) {
+          placeBridge1();
+          tapeFollowNTicks( irDelay.getValue() );
+          digitalWrite(comPin, HIGH);
+          LCD.clear(); LCD.home();
+          LCD.print("high");
+        }
+        else if (edgeCount == 2) {
+          toSecondGap();
+          placeBridge2();
+          suspensionBridge();
+          grandFinale();
+          break;
+        }
+      }
+    }*/
 
   LCD.clear(); LCD.print("reeeeeee");
   delay(2500);
@@ -331,28 +400,24 @@ void placeBridge1() {
 }
 
 void arduinoStop() {
-  arduinoStopCount++;
-  LCD.clear(); LCD.home();
-  LCD.print(arduinoStopCount);
+  LCD.setCursor(2, 0);
+  LCD.print("arduinoStop");
   tapeFollowNTicks( stuffy_delay.getValue() );
   motor.stop_all();
-  while ( digitalRead(stuffyComPin) == HIGH ) {}
 }
 
-void arduinoLeftStop(){
+void arduinoLeftStop() {
   arduinoStopCount++;
   LCD.clear(); LCD.home();
-  LCD.print(arduinoStopCount);
+  LCD.print(highCount);
   tapeFollowNTicks( stuffyDelayLeft.getValue() );
   motor.stop_all();
-
-  while ( digitalRead(stuffyComPin) == HIGH ) {};
 }
 
 void delayNTicks( int numTicks ) {
   long startTicks = encoderRPos;
   while ( encoderRPos - startTicks < numTicks ) {
-    if ( digitalRead(stuffyComPin) == HIGH ) {
+    if ( debounceStuffyPin() ) {
       arduinoStop();
     }
   }
@@ -448,6 +513,8 @@ bool debounceStopButton() {
 
 bool debounceStuffyPin() {
   if ( digitalRead(stuffyComPin) == HIGH ) {
+    LCD.setCursor(2, 0);
+    LCD.print("detected high");
     delay(15);
     if (digitalRead(stuffyComPin) == HIGH ) {
       return true;
@@ -455,6 +522,17 @@ bool debounceStuffyPin() {
   }
 
   return false;
+}
+
+bool debounceLowStuffyPin() {
+  if ( digitalRead(stuffyComPin) == LOW ) {
+    delay(15);
+    if (digitalRead(stuffyComPin) == LOW ) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 void doYouEvenLiftBro( int numTicks ) {
