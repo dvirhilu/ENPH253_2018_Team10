@@ -38,14 +38,14 @@ bool FrequencyDetection::is1kHz() {
 void FrequencyDetection::handle10kHz() {
  
 while ( !(is1kHz()) ) { digitalWrite(LED_BUILTIN, HIGH); }
-digitalWrite(LED_BUILTIN, LOW);
+digitalWrite(LED_BUILTIN, HIGH);
   while ( !(is10kHz()) ) {}
 }
 
 void FrequencyDetection::handle1kHz() {
   
   while ( !(is10kHz()) ) { digitalWrite(LED_BUILTIN, HIGH);}
-  digitalWrite(LED_BUILTIN,LOW);
+  digitalWrite(LED_BUILTIN,HIGH);
 }
 
 void FrequencyDetection::detectFrequency() {
