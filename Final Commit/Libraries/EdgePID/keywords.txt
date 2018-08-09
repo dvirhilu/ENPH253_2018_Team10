@@ -1,0 +1,5 @@
+EdgePID	KEYWORD1
+setEdgeKp	KEYWORD2
+setDefaultSpeed	KEYWORD2
+getEdgePID	KEYWORD2
+edgeFollow	KEYWORD2
